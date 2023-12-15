@@ -5,10 +5,6 @@ import React, { useEffect, useRef, useState } from "react"
 import DeckGL from '@deck.gl/react';
 import { BitmapLayer, IconLayer, PathLayer, TileLayer } from 'deck.gl';
 
-
-const AIR_PORTS =
-	'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_10m_airports.geojson';
-
 const INITIAL_VIEW_STATE = {
 	latitude: 50.6330,
 	longitude: 5.5697,
@@ -16,77 +12,76 @@ const INITIAL_VIEW_STATE = {
 	bearing: 0,
 };
 
-const lineMap = new Map()
-
 export default function Home() {
+	const initialized = useRef(false)
 	const [buses, setBuses] = useState([])
-	const [busesn1, setBusesn1] = useState([])
-
 	const [showUi, setShowUi] = useState(false)
 	const [uiData, setUiData] = useState({} as any)
+	const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+	const [canConnect, setCanConnect] = useState(true);
 
-	const [isRender, setRender] = useState(false)
-	const [currentBuses, setCurrentBuses] = useState<any[]>([])
+	const connectWebSocket = async () => {
+		if (!canConnect) return;
+		setCanConnect(false);
 
-	const [ws, setWs] = useState<null | WebSocket>(null)
+		const ws = new WebSocket(process.env.NEXT_PUBLIC_API || "ws://localhost:8080/ws");
 
+		ws.onopen = () => {
+			console.log("WebSocket Connected");
+			setCanConnect(false);
+		};
 
-	useEffect(() => make_ws(), [])
+		ws.onerror = (error) => {
+			console.log("WebSocket Error: ", error);
+			setCanConnect(true);
+		};
 
-
-	const make_ws = () => {
-		if (ws !== null) {
-			ws.close()
-		}
-
-		const new_ws = new WebSocket(process.env.NEXT_PUBLIC_API || "ws://localhost:8080/ws")
-		new_ws.onopen = () => {
-			console.log("connected")
-		}
-		new_ws.onmessage = (e) => {
+		ws.onmessage = (message) => {
 			try {
-				const data = JSON.parse(e.data)
-				setBuses(data.slice(0, 1000))
-				setRender(false)
+				let ds = new DecompressionStream("gzip");
+				let decompressedStream = message.data.stream().pipeThrough(ds);
+				new Response(decompressedStream).text().then(e => {
+					const data = JSON.parse(atob(e))
+					setBuses(data)
+				})
 			} catch (e) {
 				console.log(e)
 			}
 		}
-		new_ws.onclose = () => {
-			new_ws.close()
-			setTimeout(() => make_ws(), 1000)
-			console.log("disconnected")
-		}
-		new_ws.onerror = (e) => {
-			new_ws.close()
-			setTimeout(() => make_ws(), 1000)
-			console.log(e)
+
+		ws.onclose = () => {
+			console.log("WebSocket Disconnected. Attempting to reconnect...");
+			setTimeout(() => {
+				setCanConnect(true);
+				connectWebSocket();
+			}, 2000);
+		};
+
+		setWebSocket(ws);
+	};
+
+
+	useEffect(() => {
+		if (!initialized.current) {
+			initialized.current = true
+			connectWebSocket();
+
 		}
 
-		setWs(new_ws)
-	}
-
+		return () => {
+			if (webSocket) {
+				webSocket.close();
+			}
+		};
+	}, []);
 
 
 	function createSVGIcon(id: string) {
-		return `<svg viewBox="0 0 200 250" width="200" height="250" xmlns="http://www.w3.org/2000/svg">
-			<linearGradient id="a" x1="0" x2="0" y1="0" y2="1">
-				<stop offset="0" stop-color="#ffed00"/>
-				<stop offset="1" stop-color="#d6ac00"/>
-			</linearGradient>
-			<path style="fill:url(#a)" d="M 0 0 L 0 200 L 100 250 L 200 200 L 200 0 L 0 0 Z"/>
-			<path fill="#1E3050" d="M 100.007 73.679 C 126.196 73.679 147.014 81.065 147.014 90.467 L 147.014 160.977 C 147.018 164.688 144.008 167.697 140.298 167.693 L 140.298 174.409 C 140.301 178.118 137.293 181.126 133.584 181.123 L 126.868 181.123 C 123.158 181.127 120.149 178.119 120.153 174.409 L 120.153 167.693 L 79.861 167.693 L 79.861 174.409 C 79.864 178.119 76.855 181.127 73.145 181.123 L 66.43 181.123 C 62.72 181.126 59.712 178.118 59.716 174.409 L 59.716 167.693 C 56.005 167.697 52.996 164.688 53 160.977 L 53 90.467 C 53 81.065 73.818 73.679 100.007 73.679 Z M 66.43 100.541 L 66.43 127.402 C 66.43 131.115 69.43 134.116 73.145 134.116 L 126.868 134.116 C 130.578 134.12 133.587 131.112 133.584 127.402 L 133.584 100.541 C 133.588 96.83 130.578 93.821 126.868 93.825 L 73.145 93.825 C 69.434 93.821 66.425 96.83 66.43 100.541 Z M 69.787 157.619 C 74.958 157.619 78.189 152.025 75.603 147.548 C 74.404 145.47 72.186 144.189 69.787 144.19 C 64.619 144.19 61.388 149.786 63.972 154.262 C 65.171 156.339 67.388 157.619 69.787 157.619 Z M 130.226 157.619 C 135.395 157.619 138.625 152.025 136.042 147.548 C 134.842 145.47 132.625 144.19 130.226 144.19 C 125.056 144.19 121.825 149.786 124.41 154.262 C 125.61 156.339 127.827 157.619 130.226 157.619 Z"/>
-			<text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 59px; font-weight:700; white-space: pre;" x="50%" text-anchor="middle" y="55">${id}</text>
-			</svg>`;
+		return `<svg viewBox="0 0 200 250" width="200" height="250" xmlns="http://www.w3.org/2000/svg"><linearGradient id="a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffed00"/><stop offset="1" stop-color="#d6ac00"/></linearGradient><path style="fill:url(#a)" d="M 0 0 L 0 200 L 100 250 L 200 200 L 200 0 L 0 0 Z"/><path fill="#1E3050" d="M 100.007 73.679 C 126.196 73.679 147.014 81.065 147.014 90.467 L 147.014 160.977 C 147.018 164.688 144.008 167.697 140.298 167.693 L 140.298 174.409 C 140.301 178.118 137.293 181.126 133.584 181.123 L 126.868 181.123 C 123.158 181.127 120.149 178.119 120.153 174.409 L 120.153 167.693 L 79.861 167.693 L 79.861 174.409 C 79.864 178.119 76.855 181.127 73.145 181.123 L 66.43 181.123 C 62.72 181.126 59.712 178.118 59.716 174.409 L 59.716 167.693 C 56.005 167.697 52.996 164.688 53 160.977 L 53 90.467 C 53 81.065 73.818 73.679 100.007 73.679 Z M 66.43 100.541 L 66.43 127.402 C 66.43 131.115 69.43 134.116 73.145 134.116 L 126.868 134.116 C 130.578 134.12 133.587 131.112 133.584 127.402 L 133.584 100.541 C 133.588 96.83 130.578 93.821 126.868 93.825 L 73.145 93.825 C 69.434 93.821 66.425 96.83 66.43 100.541 Z M 69.787 157.619 C 74.958 157.619 78.189 152.025 75.603 147.548 C 74.404 145.47 72.186 144.189 69.787 144.19 C 64.619 144.19 61.388 149.786 63.972 154.262 C 65.171 156.339 67.388 157.619 69.787 157.619 Z M 130.226 157.619 C 135.395 157.619 138.625 152.025 136.042 147.548 C 134.842 145.47 132.625 144.19 130.226 144.19 C 125.056 144.19 121.825 149.786 124.41 154.262 C 125.61 156.339 127.827 157.619 130.226 157.619 Z"/><text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 59px; font-weight:700; white-space: pre;" x="50%" text-anchor="middle" y="55">${id}</text></svg>`;
 	}
 
 	function svgToDataURL(id: string) {
-		if (lineMap.has(id)) {
-			return lineMap.get(id)
-		}
-		const test = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(createSVGIcon(id))}`
-		lineMap.set(id, test)
-		return test
+		return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(createSVGIcon(id))}`
 	}
 
 	const layers = [
@@ -101,9 +96,9 @@ export default function Home() {
 			highlightColor: [60, 60, 60, 40],
 			// https://wiki.openstreetmap.org/wiki/Zoom_levels
 			minZoom: 0,
-			maxZoom: 20,
+			maxZoom: 19,
 			tileSize: 512,
-			zoomOffset: 1,
+			zoomOffset: 0,
 			renderSubLayers: (props: any) => {
 				const {
 					bbox: { west, south, east, north }
@@ -143,7 +138,7 @@ export default function Home() {
 				width: 50,
 				height: 62.5,
 			}),
-			getSize: d => 60,
+			getSize: _ => 60,
 			onClick: (d: any) => {
 				setShowUi(true)
 				setUiData(d.object)
@@ -162,7 +157,7 @@ export default function Home() {
 					dragPan: true,
 					dragRotate: false,
 				}}
-				layers={layers} />;
+				layers={layers} />
 
 			<div
 				style={{

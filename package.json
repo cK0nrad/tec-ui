@@ -16,7 +16,8 @@
     "deck.gl": "^8.9.33",
     "next": "14.0.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "streaming-bz2-decompress": "^1.0.19"
   },
   "devDependencies": {
     "@types/node": "^20",
