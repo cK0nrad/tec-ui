@@ -1,13 +1,9 @@
 'use client';
 import styles from './page.module.css'
-import React, { useCallback, useEffect, useRef, useState } from "react"
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBusSimple } from '@fortawesome/free-solid-svg-icons';
+import React, { useEffect, useRef, useState } from "react"
 
 import DeckGL from '@deck.gl/react';
-import { LineLayer } from '@deck.gl/layers';
-import { ArcLayer, BitmapLayer, GeoJsonLayer, IconLayer, PathLayer, ScatterplotLayer, TextLayer, TileLayer } from 'deck.gl';
+import { BitmapLayer, IconLayer, PathLayer, TileLayer } from 'deck.gl';
 
 
 const AIR_PORTS =
@@ -32,17 +28,22 @@ export default function Home() {
 	const [isRender, setRender] = useState(false)
 	const [currentBuses, setCurrentBuses] = useState<any[]>([])
 
+	const [ws, setWs] = useState<null | WebSocket>(null)
 
 
 	useEffect(() => make_ws(), [])
 
 
 	const make_ws = () => {
-		const ws = new WebSocket("ws://tec-rt.ckonrad.io/ws")
-		ws.onopen = () => {
+		if (ws !== null) {
+			ws.close()
+		}
+
+		const new_ws = new WebSocket(process.env.API || "ws://localhost:8080/ws")
+		new_ws.onopen = () => {
 			console.log("connected")
 		}
-		ws.onmessage = (e) => {
+		new_ws.onmessage = (e) => {
 			try {
 				const data = JSON.parse(e.data)
 				setBuses(data.slice(0, 1000))
@@ -51,16 +52,18 @@ export default function Home() {
 				console.log(e)
 			}
 		}
-		ws.onclose = () => {
-			ws.close()
+		new_ws.onclose = () => {
+			new_ws.close()
 			setTimeout(() => make_ws(), 1000)
 			console.log("disconnected")
 		}
-		ws.onerror = (e) => {
-			ws.close()
+		new_ws.onerror = (e) => {
+			new_ws.close()
 			setTimeout(() => make_ws(), 1000)
 			console.log(e)
 		}
+
+		setWs(new_ws)
 	}
 
 
