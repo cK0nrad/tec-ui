@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+ARG API
+ENV NEXT_PUBLIC_API=$API
+
 # Create app directory
 WORKDIR /usr/src/app
 
