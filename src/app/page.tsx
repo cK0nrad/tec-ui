@@ -39,7 +39,7 @@ export default function Home() {
 			ws.close()
 		}
 
-		const new_ws = new WebSocket(process.env.API || "ws://localhost:8080/ws")
+		const new_ws = new WebSocket(process.env.NEXT_PUBLIC_API || "ws://localhost:8080/ws")
 		new_ws.onopen = () => {
 			console.log("connected")
 		}
