@@ -38,7 +38,7 @@ export default function Home() {
 
 
 	const make_ws = () => {
-		const ws = new WebSocket("ws://localhost:3000/ws")
+		const ws = new WebSocket("ws://tec-rt.ckonrad.io/ws")
 		ws.onopen = () => {
 			console.log("connected")
 		}
