@@ -6,8 +6,27 @@
 
 
 .arrowUp {
-  width: 0; 
-  height: 0; 
+  width: 0;
+  height: 0;
   border-left: 20px solid transparent;
   border-right: 20px solid transparent;
-  border-top: 20px solid #ffcd00;}
+  border-top: 20px solid #ffcd00;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  width: 100%;
+  position: absolute;
+  background-color: #000;
+  pointer-events: none;
+}
+
+.theorical::-webkit-slider-thumb {
+  background: red;
+}
+
+.theorical::-moz-range-thumb {
+  background: red;
+}
