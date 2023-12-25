@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@danmarshall/deckgl-typings": "^4.0.0",
+    "@danmarshall/deckgl-typings": "^4.9.28",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
