@@ -1,7 +1,10 @@
 FROM node:20-alpine
 
 ARG API
+ARG GTFS_API
+
 ENV NEXT_PUBLIC_API=$API
+ENV NEXT_PUBLIC_GTFS_API=$GTFS_API
 
 # Create app directory
 WORKDIR /usr/src/app
