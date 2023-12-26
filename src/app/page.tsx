@@ -311,7 +311,7 @@ export default function Home() {
 		new TileLayer({
 			id: "map-layer",
 			data: [
-				'http://map.ckonrad.io:8080/hot/{z}/{x}/{y}.png',
+				'http://map.ckonrad.io/hot/{z}/{x}/{y}.png',
 			],
 			pickable: true,
 			minZoom: 0,
