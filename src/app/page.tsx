@@ -88,6 +88,7 @@ export default function Home() {
 
 	const [bus_from_stop, setBusFromStop] = useState([] as any)
 
+
 	const nearest_point_to_line = (pt1: [number, number], pt2: [number, number], pt: [number, number]) => {
 		const x1 = pt1[0]
 		const y1 = pt1[1]
@@ -121,6 +122,13 @@ export default function Home() {
 		return squared_distance
 	}
 
+	const theoPercentage = useMemo(() => {
+		return stops.length != 0 ? current_stop_th / (stops.length - 1) * 100 : 0
+	}, [current_stop_th])
+
+	const realPercentage = useMemo(() => {
+		return stops.length != 0 ? current_stop / (stops.length - 1) * 100 : 0
+	}, [current_stop])
 
 	useEffect(() => {
 		if (refreshTO) clearTimeout(refreshTO)
@@ -733,19 +741,21 @@ export default function Home() {
 					</div>
 					<div style={{ width: "100%" }}>
 						<input
+							step={"0.01"}
 							min={0}
 							max={100}
 							style={{ zIndex: 1, height: 0 }}
 							className={`${styles.slider} ${styles.theorical}`}
-							defaultValue={stops.length != 0 ? current_stop_th / (stops.length - 1) * 100 : 0}
+							value={theoPercentage}
 							type="range" />
 
 						<input
+							step={"0.01"}
 							min={0}
 							max={100}
 							style={{ transform: "translateY(-1px)", color: 'red' }}
 							className={styles.slider}
-							defaultValue={stops.length != 0 ? current_stop / (stops.length - 1) * 100 : 0}
+							value={realPercentage}
 							type="range" />
 					</div>
 					{arrets}
