@@ -86,6 +86,7 @@ export default function Home() {
 	const [activeStop, setActiveStop] = useState([{}] as any)
 	const [activeBuses, setActiveBuses] = useState({} as any)
 
+	const [bus_from_stop, setBusFromStop] = useState([] as any)
 
 	const nearest_point_to_line = (pt1: [number, number], pt2: [number, number], pt: [number, number]) => {
 		const x1 = pt1[0]
@@ -188,6 +189,15 @@ export default function Home() {
 		}
 		setCurrentStop(nearest)
 	}, [refresh, uiData])
+
+	const update_buses = useMemo(() => {
+		if (isStopActive && bus_from_stop.length > 0) {
+			const line_bus = buses.filter((e: any) => {
+				return bus_from_stop.includes(e.line_id)
+			})
+			setActiveBuses(line_bus)
+		}
+	}, [buses, bus_from_stop, isStopActive])
 
 	const connectWebSocket = async () => {
 		if (!canConnect) return;
@@ -470,6 +480,7 @@ export default function Home() {
 					const line_bus = buses.filter((e: any) => {
 						return json_data.includes(e.line_id)
 					})
+					setBusFromStop(json_data)
 					setIsStopActive(true)
 					setActiveBuses(line_bus)
 					setActiveStop([d.object])
@@ -582,69 +593,6 @@ export default function Home() {
 			point = sec_pt
 		}
 
-		// const nearest_path_stop = path[0].path[nearest_idx_path]
-		// setTest([
-		// 	{
-		// 		"coord": nearest_path_stop,
-		// 		"arrival_time": 61440,
-		// 		"stop": {
-		// 			"stop_id": "Lemlacr1",
-		// 			"stop_code": null,
-		// 			"stop_name": "EMBOURG Café Lacroix",
-		// 			"stop_desc": "",
-		// 			"location_type": "0",
-		// 			"parent_station": null,
-		// 			"zone_id": "5820",
-		// 			"stop_url": null,
-		// 			"stop_lon": "5.60538",
-		// 			"stop_lat": "50.592919",
-		// 			"stop_timezone": null,
-		// 			"wheelchair_boarding": "0",
-		// 			"level_id": null,
-		// 			"platform_code": null
-		// 		},
-		// 		"departure_time": 61440,
-		// 		"pickup_type": "0",
-		// 		"drop_off_type": "0",
-		// 		"stop_sequence": 1,
-		// 		"stop_headsign": null,
-		// 		"continuous_pickup": "1",
-		// 		"continuous_drop_off": "1",
-		// 		"shape_dist_traveled": null,
-		// 		"timepoint": "1"
-		// 	},
-		// 	{
-		// 		"coord": nearest_path_bus,
-		// 		"arrival_time": 61440,
-		// 		"stop": {
-		// 			"stop_id": "Lemlacr1",
-		// 			"stop_code": null,
-		// 			"stop_name": "EMBOURG Café Lacroix",
-		// 			"stop_desc": "",
-		// 			"location_type": "0",
-		// 			"parent_station": null,
-		// 			"zone_id": "5820",
-		// 			"stop_url": null,
-		// 			"stop_lon": "5.60538",
-		// 			"stop_lat": "50.592919",
-		// 			"stop_timezone": null,
-		// 			"wheelchair_boarding": "0",
-		// 			"level_id": null,
-		// 			"platform_code": null
-		// 		},
-		// 		"departure_time": 61440,
-		// 		"pickup_type": "0",
-		// 		"drop_off_type": "0",
-		// 		"stop_sequence": 1,
-		// 		"stop_headsign": null,
-		// 		"continuous_pickup": "1",
-		// 		"continuous_drop_off": "1",
-		// 		"shape_dist_traveled": null,
-		// 		"timepoint": "1"
-		// 	}
-		// ])
-
-
 		const get_time = (delay: number) => {
 			const time = new Date(delay * 1000)
 			return time.getUTCHours().toString().padStart(2, '0') + ":" + time.getUTCMinutes().toString().padStart(2, '0')
@@ -658,20 +606,19 @@ export default function Home() {
 
 		return (
 			<div style={{ display: "flex", flex: "1", width: "100%", alignItems: "center", marginBottom: "10px" }}>
-				<div style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+				<div className={styles.bus_container_left} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 					<span>{current_stop != 0 ? stops[current_stop - 1].stop.stop_name : "Départ"}</span>
 					<span>{current_stop != 0 ? get_time(stops[current_stop - 1].arrival_time) : ""}</span>
 				</div>
 
-				<div style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+				<div className={styles.bus_container_mid} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 					<span>{stops[current_stop].stop.stop_name} ({html_delay} minutes)</span>
-
 					<span>{get_time(stops[current_stop].arrival_time)} &#8594; {get_time(stops[current_stop].arrival_time + delay_min * 60)}</span>
 					<span>{(real_dist * 1000).toFixed(2)}m</span>
 					<span>ETA (based on current speed) : {Math.ceil(eta)} minutes </span>
 				</div>
 
-				<div style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+				<div className={styles.bus_container_right} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 					<span>{current_stop != stops.length - 1 ? stops[current_stop + 1].stop.stop_name : "Arrivée"}</span>
 					<span>{current_stop != stops.length - 1 ? get_time(stops[current_stop + 1].arrival_time) : ""}</span>
 				</div>
@@ -734,6 +681,7 @@ export default function Home() {
 				// @ts-ignore
 				layers={layers} />
 			<div
+				className={styles.bus_container}
 				style={{
 					display: showUi ? "inline" : "none",
 					position: "fixed", width: "70vw",
@@ -772,25 +720,29 @@ export default function Home() {
 					<div style={{ flex: '1', paddingTop: "25px" }}>
 						{currentBus ? currentBus.line : "/"} : {uiData.ln}
 					</div>
-					<div style={{ width: "100%", flex: '1', display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+					<div style={{ width: "100%", flex: '1', display: "flex", flexDirection: "row", justifyContent: "space-between", marginBottom: "15px" }}>
+						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							{stops.length > 0 ? stops[0].stop.stop_name : "/"}
 						</div>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							&#8594;
 						</div>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							{stops.length > 0 ? stops[stops.length - 1].stop.stop_name : "/"}
 						</div>
 					</div>
 					<div style={{ width: "100%" }}>
 						<input
+							min={0}
+							max={100}
 							style={{ zIndex: 1, height: 0 }}
 							className={`${styles.slider} ${styles.theorical}`}
 							defaultValue={stops.length != 0 ? current_stop_th / (stops.length - 1) * 100 : 0}
 							type="range" />
 
 						<input
+							min={0}
+							max={100}
 							style={{ transform: "translateY(-1px)", color: 'red' }}
 							className={styles.slider}
 							defaultValue={stops.length != 0 ? current_stop / (stops.length - 1) * 100 : 0}

@@ -30,3 +30,34 @@
 .theorical::-moz-range-thumb {
   background: red;
 }
+
+.bus_container_left span,
+.bus_container_mid span,
+.bus_container_right span {
+  text-align: center;
+}
+
+@media (max-width:960px) {
+  .bus_container {
+    width: 100% !important;
+  }
+
+  .bus_container_left {
+    display: none !important;
+  }
+
+  .bus_container_right {
+    display: none !important;
+  }
+}
+
+
+@media (max-width:1200px) {
+  .bus_container {
+    width: 100% !important;
+  }
+
+  .bus_container div {
+    border: none;
+  }
+}
