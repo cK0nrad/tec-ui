@@ -10,6 +10,11 @@ This is an ongoing project and is not finished yet.
 Most of the work done here is going to be transfered to the backend.
 The single page and the socket will be kept here but the processing of the data will be done on the backend. Thus, the spaghetti code will be removed.
 
+## Screenshots
+
+![screenshot](https://raw.githubusercontent.com/cK0nrad/tec-ui/master/screenshot/live_map.png)
+
+
 ## How to use
 
 ```bash	
