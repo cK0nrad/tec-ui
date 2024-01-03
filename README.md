@@ -4,6 +4,8 @@ THIS IS NOT RELATED TO THE TEC (OTW) IN ANY WAY. THIS IS A PERSONAL PROJECT.
 
 This is a live map of the TEC network. It is updated every 5 secondes.
 
+[Live map demo](https://live.ckonrad.io/)
+
 ## Warning
 
 This is an ongoing project and is not finished yet. 
