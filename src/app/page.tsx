@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 // @ts-ignore
 import DeckGL from '@deck.gl/react';
 // @ts-ignore
-import { BitmapLayer, IconLayer, PathLayer, TileLayer, WebMercatorViewport } from 'deck.gl';
+import { BitmapLayer, FlyToInterpolator, IconLayer, PathLayer, TileLayer, WebMercatorViewport } from 'deck.gl';
 // @ts-ignore
 import { ScatterplotLayer } from 'deck.gl';
 import Supercluster from 'supercluster';
@@ -50,7 +50,9 @@ export default function Home() {
 		longitude: 5.5697,
 		zoom: 12,
 		bearing: 0,
-		pitch: 0
+		pitch: 0,
+        transitionDuration: 1000,
+        transitionInterpolator: new FlyToInterpolator()
 	});
 
 
@@ -270,9 +272,9 @@ export default function Home() {
 		setUiData({})
 		setPath([])
 		setCurrentBus({})
-		console.log(d)
 		setInitialViewState(
-			{ ...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14 }
+			{ ...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14,         bearing: 0,
+}
 		)
 		try {
 			const data_info = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`);
@@ -320,6 +322,7 @@ export default function Home() {
 			setCurrentBus(d.object)
 			setUiData({ ln: json_data_info.route_long_name, id: d.object.id })
 			setShowUi(true)
+			
 		} catch (e) {
 			setShowUi(false)
 			setUiData({})
