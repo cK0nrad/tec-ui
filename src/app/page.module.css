@@ -61,6 +61,7 @@
 
 @media (max-width:1200px) {
   .bus_container {
+    position: "relative";
     width: 100% !important;
     bottom: 0 !important;
     height: auto !important;

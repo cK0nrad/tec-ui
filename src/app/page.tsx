@@ -719,7 +719,7 @@ export default function Home() {
 				style={{
 					display: showUi ? "inline" : "none",
 					position: "fixed", width: "70vw",
-					height: "300px", backgroundColor: "#fbf4e2",
+					backgroundColor: "#fbf4e2",
 					bottom: "10px",
 					left: "50%",
 					transform: "translate(-50%, 0)",
