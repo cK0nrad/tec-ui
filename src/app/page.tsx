@@ -270,8 +270,9 @@ export default function Home() {
 		setUiData({})
 		setPath([])
 		setCurrentBus({})
+		console.log(d)
 		setInitialViewState(
-			{ ...initialViewState, latitude: d.coordinate[1], longitude: d.coordinate[0], zoom: 14 }
+			{ ...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14 }
 		)
 		try {
 			const data_info = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`);
