@@ -8,13 +8,6 @@ import { BitmapLayer, IconLayer, PathLayer, TileLayer, WebMercatorViewport } fro
 // @ts-ignore
 import { ScatterplotLayer } from 'deck.gl';
 import Supercluster from 'supercluster';
-const INITIAL_VIEW_STATE = {
-	latitude: 50.6330,
-	longitude: 5.5697,
-	zoom: 12,
-	bearing: 0,
-};
-
 const MAX_ZOOM = 12
 
 
@@ -52,6 +45,15 @@ const svgToDataURL = (id: string) =>
 
 
 export default function Home() {
+	const [initialViewState, setInitialViewState] = useState({
+		latitude: 50.6330,
+		longitude: 5.5697,
+		zoom: 12,
+		bearing: 0,
+		pitch: 0
+	});
+
+
 	const initialized = useRef(false)
 	const [buses, setBuses] = useState([])
 	const [popup, removePopup] = useState(false)
@@ -268,7 +270,9 @@ export default function Home() {
 		setUiData({})
 		setPath([])
 		setCurrentBus({})
-
+		setInitialViewState(
+			{ ...initialViewState, latitude: d.coordinate[1], longitude: d.coordinate[0], zoom: 14 }
+		)
 		try {
 			const data_info = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`);
 			const data_shape = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/shape?trip_id=${d.object.trip_id}`);
@@ -669,8 +673,8 @@ export default function Home() {
 				borderLeft: "1px solid #110f0d",
 				borderRight: "1px solid #110f0d",
 				borderBottom: "1px solid #110f0d",
-				textAlign:"center"
-			}}>
+				textAlign: "center"
+			}} className={styles.popup}>
 				Click on a bus to see details!
 				<button onClick={() => { removePopup(true) }}>close</button>
 			</div>
@@ -686,71 +690,79 @@ export default function Home() {
 				borderBottomLeftRadius: 15,
 				borderLeft: "1px solid #110f0d",
 				borderBottom: "1px solid #110f0d"
-			}}>
+			}} className={styles.selection}>
 				<button onClick={() => { reset_focus(); setShowStop(false) }}>Live buses</button>
 				<button onClick={() => { reset_focus(); get_stops(viewport); setShowStop(true) }}>Stops</button>
 				<button onClick={() => { get_stops(viewport); reset_focus() }} style={{ display: isStopActive ? "inline" : "none" }}>Remove focus</button>
 			</div>
-			<DeckGL
-				onViewStateChange={(e: any) => {
-					if (e.interactionState.isDragging) return;
-					(async () => {
-						const viewport = new WebMercatorViewport(e.viewState);
-						const nw = viewport.unproject([0, 0]);
-						// @ts-ignore
-						const se = viewport.unproject([viewport.width, viewport.height]);
-						setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
-						if (!showStop || isStopActive) return
-						get_stops({ north: nw[1], east: se[0], south: se[1], west: nw[0] })
-					})();
+			<div className={styles.map} style={{ height: '100%', width: '100%', position: 'relative' }}>
+				<DeckGL
+					onViewStateChange={(e: any) => {
+						if (e.interactionState.isDragging) return;
+						(async () => {
+							const viewport = new WebMercatorViewport(e.viewState);
+							const nw = viewport.unproject([0, 0]);
+							// @ts-ignore
+							const se = viewport.unproject([viewport.width, viewport.height]);
+							setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
+							if (!showStop || isStopActive) return
+							get_stops({ north: nw[1], east: se[0], south: se[1], west: nw[0] })
+						})();
 
-				}}
-				ref={deckRef}
-				initialViewState={INITIAL_VIEW_STATE}
-				controller={{
+					}}
+					ref={deckRef}
+					style={{ display: "static" }}
+					initialViewState={initialViewState}
+					controller={{
+						// @ts-ignore
+						dragPan: true,
+						dragRotate: false,
+					}}
 					// @ts-ignore
-					dragPan: true,
-					dragRotate: false,
-				}}
-				// @ts-ignore
-				layers={layers} />
+					layers={layers} />
+			</div>
 			<div
 				className={styles.bus_container}
 				style={{
-					display: showUi ? "inline" : "none",
-					position: "fixed", width: "70vw",
+					display: showUi ? "flex" : "none",
+					position: "fixed",
+					width: "70vw",
 					backgroundColor: "#fbf4e2",
 					bottom: "10px",
 					left: "50%",
 					transform: "translate(-50%, 0)",
 					zIndex: 10,
-				}}>
-				<div
-					onClick={() => {
-						setStops([]);
-						setPath([]);
-						setUiData({});
-						setShowUi(false)
-					}}
-					style={{ cursor: "pointer", position: "absolute", right: "0", top: "0", padding: "5px" }}>
-					x
-				</div>
-				<div
-					style={{ position: "absolute", left: "0", top: "0", padding: "5px" }}>
-					{(() => {
-						const now = new Date()
-						return <div>{`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`}</div>
-					})()
-					}
-				</div>
-				<div style={{
-					display: showUi ? "flex" : "none",
-					height: "100%",
+					border: "1px solid #110f0d",
+					borderRadius: "5px",
 					flexDirection: "column",
 					alignItems: "center",
+				}}>
+				<div style={{position:"relative", width: '100%'}}>
+					<div
+						onClick={() => {
+							setStops([]);
+							setPath([]);
+							setUiData({});
+							setShowUi(false)
+						}}
+						style={{ cursor: "pointer", position: "absolute", right: "0", top: "0", padding: "5px" }}>
+						x
+					</div>
+					<div
+						style={{ position: "absolute", left: "0", top: "0", padding: "5px" }}>
+						{(() => {
+							const now = new Date()
+							return <div>{`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`}</div>
+						})()
+						}
+					</div>
+
+				</div>
+				<div style={{
 					width: "100%",
-					border: "1px solid #110f0d",
-					borderRadius: "5px"
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
 				}}>
 
 					<div style={{ flex: '1', padding: "25px 0", marginTop: "5px" }} className={styles.busTitle}>
@@ -791,9 +803,9 @@ export default function Home() {
 						/>
 					</div>
 					{arrets}
-					<div style={{ padding: "15px", flex: '1', display:'flex', alignItems:"center", flexDirection:"column" }}>
-						<p><b style={{color:"#ffcd00", backgroundColor:"black"}}>Yellow</b>: real time.</p>
-						<p><b style={{color:"red", backgroundColor:"black"}}>Red</b>: theorical time.</p>
+					<div style={{ padding: "15px", flex: '1', display: 'flex', alignItems: "center", flexDirection: "column" }}>
+						<p><b style={{ color: "#ffcd00", backgroundColor: "black" }}>Yellow</b>: real time.</p>
+						<p><b style={{ color: "red", backgroundColor: "black" }}>Red</b>: theorical time.</p>
 						<p>BUS NUMBER : {currentBus ? currentBus.id : "/"}</p>
 					</div>
 				</div>
