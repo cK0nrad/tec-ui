@@ -54,6 +54,7 @@ const svgToDataURL = (id: string) =>
 export default function Home() {
 	const initialized = useRef(false)
 	const [buses, setBuses] = useState([])
+	const [popup, removePopup] = useState(false)
 
 	const [test, setTest] = useState([] as any)
 
@@ -505,8 +506,8 @@ export default function Home() {
 			widthScale: 20,
 			widthMinPixels: 2,
 			getPath: (d: any) => d.path,
-			getColor: (_: any) => [228, 0, 43],
-			getWidth: (_: any) => 0.1
+			getColor: () => [228, 0, 43],
+			getWidth: () => 0.1
 		}),
 
 		new ScatterplotLayer({
@@ -522,10 +523,11 @@ export default function Home() {
 			lineWidthMinPixels: 1,
 			// @ts-ignore
 			strokeWidth: .1,
+			getLineWidth: () => .1,
 			getPosition: (d: any) => d.coord,
-			getRadius: (d: any) => .2,
-			getFillColor: (d: any) => [255, 237, 0],
-			getLineColor: (d: any) => [0, 0, 0]
+			getRadius: () => .2,
+			getFillColor: () => [255, 237, 0],
+			getLineColor: () => [0, 0, 0]
 		}),
 		// new ScatterplotLayer({
 		// 	id: 'scatterplot-layer2',
@@ -613,7 +615,7 @@ export default function Home() {
 		const html_delay = Math.abs(delay_min) >= 3 ? <span style={{ color: "red" }}>{delay}</span > : <span>{delay} </span>
 
 		return (
-			<div style={{ display: "flex", flex: "1", width: "100%", alignItems: "center", marginBottom: "10px" }}>
+			<div style={{ padding: "15px", display: "flex", flex: "1", width: "100%", alignItems: "center" }}>
 				<div className={styles.bus_container_left} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 					<span>{current_stop != 0 ? stops[current_stop - 1].stop.stop_name : "Départ"}</span>
 					<span>{current_stop != 0 ? get_time(stops[current_stop - 1].arrival_time) : ""}</span>
@@ -621,7 +623,11 @@ export default function Home() {
 
 				<div className={styles.bus_container_mid} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 					<span>{stops[current_stop].stop.stop_name} ({html_delay} minutes)</span>
-					<span>{get_time(stops[current_stop].arrival_time)} &#8594; {get_time(stops[current_stop].arrival_time + delay_min * 60)}</span>
+					<span>
+						{get_time(stops[current_stop].arrival_time)}  (<span style={{ color: "red" }}>&bull;</span>)
+						&#8594;
+						{get_time(stops[current_stop].arrival_time + delay_min * 60)}  (<span style={{ color: "#ffcd00" }}>&bull;</span>)
+					</span>
 					<span>{(real_dist * 1000).toFixed(2)}m</span>
 					<span>ETA (based on current speed) : {Math.ceil(eta)} minutes </span>
 				</div>
@@ -648,6 +654,26 @@ export default function Home() {
 	const deckRef = useRef<DeckGL>(null);
 	return (
 		<main className={styles.main}>
+			<div style={{
+				position: "fixed",
+				top: 0,
+				right: "50%",
+				transform: "translate(50%, 0)",
+				padding: '10px',
+				zIndex: 12,
+				display: popup ? "none" : "flex",
+				flexDirection: "column",
+				backgroundColor: "#fbf4e2",
+				borderBottomLeftRadius: 15,
+				borderBottomRightRadius: 15,
+				borderLeft: "1px solid #110f0d",
+				borderRight: "1px solid #110f0d",
+				borderBottom: "1px solid #110f0d",
+				textAlign:"center"
+			}}>
+				Click on a bus to see details!
+				<button onClick={() => { removePopup(true) }}>close</button>
+			</div>
 			<div style={{
 				position: "fixed",
 				top: 0,
@@ -694,8 +720,10 @@ export default function Home() {
 					display: showUi ? "inline" : "none",
 					position: "fixed", width: "70vw",
 					height: "300px", backgroundColor: "#fbf4e2",
-					bottom: "10px", left: "50%",
+					bottom: "10px",
+					left: "50%",
 					transform: "translate(-50%, 0)",
+					zIndex: 10,
 				}}>
 				<div
 					onClick={() => {
@@ -725,17 +753,17 @@ export default function Home() {
 					borderRadius: "5px"
 				}}>
 
-					<div style={{ flex: '1', paddingTop: "25px" }}>
+					<div style={{ flex: '1', padding: "25px 0", marginTop: "5px" }} className={styles.busTitle}>
 						{currentBus ? currentBus.line : "/"} : {uiData.ln}
 					</div>
-					<div style={{ width: "100%", flex: '1', display: "flex", flexDirection: "row", justifyContent: "space-between", marginBottom: "15px" }}>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
+					<div style={{ width: "100%", flex: '1', display: "flex", flexDirection: "row", justifyContent: "space-between" }} className={styles.busEta}>
+						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							{stops.length > 0 ? stops[0].stop.stop_name : "/"}
 						</div>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
+						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							&#8594;
 						</div>
-						<div style={{ flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
+						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
 							{stops.length > 0 ? stops[stops.length - 1].stop.stop_name : "/"}
 						</div>
 					</div>
@@ -747,19 +775,25 @@ export default function Home() {
 							style={{ zIndex: 1, height: 0 }}
 							className={`${styles.slider} ${styles.theorical}`}
 							value={theoPercentage}
-							type="range" />
+							type="range"
+							readOnly
+						/>
 
 						<input
 							step={"0.01"}
 							min={0}
 							max={100}
-							style={{ transform: "translateY(-1px)", color: 'red' }}
-							className={styles.slider}
+							style={{ transform: "translateY(-1px)" }}
+							className={`${styles.slider} ${styles.real}`}
 							value={realPercentage}
-							type="range" />
+							type="range"
+							readOnly
+						/>
 					</div>
 					{arrets}
-					<div style={{ flex: '1' }}>
+					<div style={{ padding: "15px", flex: '1', display:'flex', alignItems:"center", flexDirection:"column" }}>
+						<p><b style={{color:"#ffcd00", backgroundColor:"black"}}>Yellow</b>: real time.</p>
+						<p><b style={{color:"red", backgroundColor:"black"}}>Red</b>: theorical time.</p>
 						<p>BUS NUMBER : {currentBus ? currentBus.id : "/"}</p>
 					</div>
 				</div>

@@ -31,6 +31,13 @@
   background: red;
 }
 
+.real::-webkit-slider-thumb {
+  background: #ffcd00;
+}
+.real::-moz-range-thumb {
+  background: #ffcd00;
+}
+
 .bus_container_left span,
 .bus_container_mid span,
 .bus_container_right span {
@@ -55,9 +62,27 @@
 @media (max-width:1200px) {
   .bus_container {
     width: 100% !important;
+    bottom: 0 !important;
+    height: auto !important;
   }
-
+  .busTitle {
+    margin-bottom: 10px;
+    text-align: center;
+  }
   .bus_container div {
     border: none;
+  }
+}
+
+
+
+@media (max-width:400px) {
+  .busEta {
+    flex-direction: column !important;
+    margin-bottom: 15px;
+  }
+
+  .busEta div  {
+    padding: 0 !important;
   }
 }
