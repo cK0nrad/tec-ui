@@ -48,6 +48,7 @@ interface Store {
     currentStop: number;
     currentTheoricalStop: number;
     currentLinePath: [{ path: [number, number][] }];
+    showUi: boolean;
     setRealPercentage: (by: number) => void
     setTheoricalPercentage: (by: number) => void
     setCurrentBus: (bus: Bus) => void
@@ -56,6 +57,7 @@ interface Store {
     setCurrentStop: (stop: number) => void
     setCurrentTheoricalStop: (stop: number) => void
     setCurrentLinePath: (path: [{ path: [number, number][] }]) => void
+    setShowUi: (show: boolean) => void
 }
 
 

@@ -1,4 +1,5 @@
 import { MapStop } from "@/components/type";
+import { logError } from "./logger";
 
 const earthMeasure = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6378.137;
@@ -33,7 +34,7 @@ const getStops = async (north: number, east: number, south: number, west: number
         if (!json_data) return [];
         return json_data as MapStop[];
     } catch (e) {
-        console.log(e)
+        logError(`Error while fetching stops: ${e}`)
     }
     return []
 }

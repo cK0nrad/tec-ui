@@ -23,6 +23,7 @@ const useStore = create<Store>((set) => ({
     currentLinePath: [{path: []}],
     currentStop: 0,
     currentTheoricalStop: 0,
+    showUi: false,
     setRealPercentage: (by) => set({ realPercentage: by }),
     setTheoricalPercentage: (by) => set({ theoricalPercentage: by }),
     setCurrentBus: (bus) => set({ currentBus: bus }),
@@ -31,6 +32,7 @@ const useStore = create<Store>((set) => ({
     setCurrentStop: (stop) => set({ currentStop: stop }),
     setCurrentTheoricalStop: (stop) => set({ currentTheoricalStop: stop }),
     setCurrentLinePath: (path) => set({ currentLinePath: path }),
+    setShowUi: (show) => set({ showUi: show }),
 }))
 
 

@@ -2,6 +2,7 @@ import { earthMeasure } from '@/utils/utils';
 import styles from './info-bar.module.css'
 import useStore from "@/components/store";
 import { useMemo } from 'react';
+import { logError, logInfo } from '@/utils/logger';
 
 
 
@@ -15,10 +16,11 @@ const InfoBar = ({ }: Props) => {
 		theoricalPercentage,
 		currentBus,
 		currentLineStops,
-		uiData,
+		uiData, setUiData,
 		currentStop,
-		currentTheoricalStop,
-		currentLinePath
+		currentTheoricalStop, setCurrentLineStops,
+		currentLinePath, setCurrentLinePath,
+		setShowUi
 	} = useStore()
 
 	const arrets = useMemo(() => {
@@ -31,7 +33,6 @@ const InfoBar = ({ }: Props) => {
 				</div>
 			</div>
 		)
-
 		const time = new Date()
 		const hours = time.getHours()
 		const minutes = time.getMinutes()
@@ -126,10 +127,13 @@ const InfoBar = ({ }: Props) => {
 			<div style={{ position: "relative", width: '100%' }}>
 				<div
 					onClick={() => {
-						// setcurrentLineStops([]);
-						// setPath([]);
-						// setUiData({});
-						// setShowUi(false)
+						setCurrentLineStops([]);
+						setCurrentLinePath([{ path: [] }]);
+						setUiData({
+							longName: '',
+							id: ''
+						});
+						setShowUi(false)
 					}}
 					style={{ cursor: "pointer", position: "absolute", right: "0", top: "0", padding: "5px" }}>
 					x

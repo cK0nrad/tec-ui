@@ -12,6 +12,7 @@ import Supercluster from 'supercluster';
 import InfoBar from '@/components/info-bar/info-bar';
 import { getBusIcon, getStopIcon, getStops } from '@/utils/utils';
 import useStore from '@/components/store';
+import { logError, logInfo } from '@/utils/logger';
 
 const MAX_ZOOM = 12
 
@@ -32,6 +33,7 @@ export default function Home() {
 		uiData, setUiData,
 		currentLineStops, setCurrentLineStops,
 		currentLinePath, setCurrentLinePath,
+		showUi, setShowUi, 
 
 		setTheoricalPercentage,
 		setRealPercentage,
@@ -46,7 +48,6 @@ export default function Home() {
 	const [activeBuses, setActiveBuses] = useState({} as any)
 	const [buses, setBuses] = useState([])
 	const [popup, removePopup] = useState(false)
-	const [showUi, setShowUi] = useState(false)
 	const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 	const [canConnect, setCanConnect] = useState(true);
 	const [refresh, setRefresh] = useState(false)
@@ -185,12 +186,12 @@ export default function Home() {
 		const ws = new WebSocket(process.env.NEXT_PUBLIC_API || "ws://localhost:8080/ws");
 
 		ws.onopen = () => {
-			console.log("WebSocket Connected");
+			logInfo("WebSocket Connected");
 			setCanConnect(false);
 		};
 
 		ws.onerror = (error) => {
-			console.log("WebSocket Error: ", error);
+			logError(`WebSocket Error: ${error}`);
 			setCanConnect(true);
 		};
 
@@ -203,12 +204,12 @@ export default function Home() {
 					setBuses(data)
 				})
 			} catch (e) {
-				console.log(e)
+				logError(`WebSocket Error: ${e}`)
 			}
 		}
 
 		ws.onclose = () => {
-			console.log("WebSocket Disconnected. Attempting to reconnect...");
+			logError("WebSocket Disconnected");
 			setTimeout(() => {
 				setCanConnect(true);
 				connectWebSocket();
@@ -293,7 +294,6 @@ export default function Home() {
 					...stop,
 				})
 			}
-			console.log(new_stops)
 			setCurrentLineStops(new_stops)
 
 			let path = [] as any[][2];
@@ -302,7 +302,6 @@ export default function Home() {
 			}
 			setCurrentLinePath([{ path }])
 			setCurrentBus(d.object)
-			console.log(d.object)
 			setUiData({ longName: json_data_info.route_long_name, id: d.object.id })
 			setShowUi(true)
 
@@ -312,7 +311,7 @@ export default function Home() {
 				longName: '',
 				id: ''
 			})
-			console.log(e)
+			logError(`Error while fetching bus info: ${e}`)
 		}
 
 	}
@@ -488,7 +487,7 @@ export default function Home() {
 					setActiveBuses(line_bus)
 					setActiveStop([d.object])
 				} catch (e) {
-					console.log()
+					logError(`Error while fetching bus from stop: ${e}`)
 				}
 			},
 			pickable: true,
