@@ -60,7 +60,12 @@ const InfoBar = ({ }: Props) => {
 		for (let i = 1; i < stop_to_path.length; i++)
 			nearest_idx_path = stop_to_path[i] < stop_to_path[nearest_idx_path] ? i : nearest_idx_path;
 
-		if (!nearest_idx_bus || (currentLinePath[0].path.length < nearest_idx_bus - 1)) return
+		if(!nearest_idx_bus)
+			nearest_idx_bus += 1
+		
+		if ((currentLinePath[0].path.length < nearest_idx_bus - 1)) 
+			return;
+
 		let point = currentLinePath[0].path[nearest_idx_bus]
 		let real_dist = earthMeasure(point[1], point[0], bus_pos[1], bus_pos[0])
 		for (let i = nearest_idx_bus + 1; i < nearest_idx_path; i++) {
