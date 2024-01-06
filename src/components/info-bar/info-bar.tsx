@@ -41,7 +41,7 @@ const InfoBar = ({ }: Props) => {
 		if (arrival > 86400)
 			secondes += 86400
 
-		if (!currentLinePath.length || !currentLineStops.length) return
+		if (!currentLinePath[0].path.length || !currentLineStops.length) return
 
 		//nearest point on path
 		const bus_pos = [currentBus.longitude, currentBus.latitude]
@@ -63,7 +63,7 @@ const InfoBar = ({ }: Props) => {
 		if (!nearest_idx_bus)
 			nearest_idx_bus = 1
 
-		if (!currentLinePath[0].path.length || (currentLinePath[0].path.length < nearest_idx_bus - 1))
+		if (currentLinePath[0].path.length < nearest_idx_bus - 1)
 			return;
 
 		let point = currentLinePath[0].path[nearest_idx_bus]
