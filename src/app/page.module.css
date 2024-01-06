@@ -65,11 +65,15 @@
     position: static !important;
     width: 100% !important;
     bottom: 0 !important;
-    height: auto !important;
     transform: none !important;
     top: auto;
     top: left;
     border-radius: 0 !important;
+    min-height: 40vh !important;
+    max-height: 40vh !important;
+    height: 40vh !important;
+    overflow-y: scroll;
+    overflow-x: hidden;
   }
 
   .popup {
@@ -77,6 +81,7 @@
     transform: none !important;
     border-radius: 0 !important;
     display: inline;
+    
   }
 
   #deckgl-wrapper {

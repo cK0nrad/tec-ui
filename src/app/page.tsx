@@ -51,8 +51,8 @@ export default function Home() {
 		zoom: 12,
 		bearing: 0,
 		pitch: 0,
-        transitionDuration: 1000,
-        transitionInterpolator: new FlyToInterpolator()
+		transitionDuration: 1000,
+		transitionInterpolator: new FlyToInterpolator()
 	});
 
 
@@ -60,12 +60,9 @@ export default function Home() {
 	const [buses, setBuses] = useState([])
 	const [popup, removePopup] = useState(false)
 
-	const [test, setTest] = useState([] as any)
-
 	const [path, setPath] = useState([] as any)
 	const [stops, setStops] = useState([] as any)
 	const [currentBus, setCurrentBus] = useState({} as any)
-
 
 	const [showUi, setShowUi] = useState(false)
 	const [uiData, setUiData] = useState({} as any)
@@ -273,8 +270,9 @@ export default function Home() {
 		setPath([])
 		setCurrentBus({})
 		setInitialViewState(
-			{ ...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14,         bearing: 0,
-}
+			{
+				...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14, bearing: 0,
+			}
 		)
 		try {
 			const data_info = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`);
@@ -322,7 +320,7 @@ export default function Home() {
 			setCurrentBus(d.object)
 			setUiData({ ln: json_data_info.route_long_name, id: d.object.id })
 			setShowUi(true)
-			
+
 		} catch (e) {
 			setShowUi(false)
 			setUiData({})
@@ -529,32 +527,12 @@ export default function Home() {
 			radiusMinPixels: 5,
 			radiusMaxPixels: 100,
 			lineWidthMinPixels: 1,
-			// @ts-ignore
-			strokeWidth: .1,
 			getLineWidth: () => .1,
 			getPosition: (d: any) => d.coord,
 			getRadius: () => .2,
 			getFillColor: () => [255, 237, 0],
 			getLineColor: () => [0, 0, 0]
 		}),
-		// new ScatterplotLayer({
-		// 	id: 'scatterplot-layer2',
-		// 	data: test,
-		// 	pickable: true,
-		// 	opacity: 1,
-		// 	stroked: true,
-		// 	filled: true,
-		// 	radiusScale: 10,
-		// 	radiusMinPixels: 5,
-		// 	radiusMaxPixels: 100,
-		// 	lineWidthMinPixels: 1,
-		// 	// @ts-ignore
-		// 	strokeWidth: .1,
-		// 	getPosition: (d: any) => d.coord,
-		// 	getRadius: (d: any) => .2,
-		// 	getFillColor: (d: any) => [12, 237, 0],
-		// 	getLineColor: (d: any) => [0, 0, 0]
-		// })
 	];
 
 	const reset_focus = () => {
@@ -741,7 +719,7 @@ export default function Home() {
 					flexDirection: "column",
 					alignItems: "center",
 				}}>
-				<div style={{position:"relative", width: '100%'}}>
+				<div style={{ position: "relative", width: '100%' }}>
 					<div
 						onClick={() => {
 							setStops([]);
@@ -783,7 +761,7 @@ export default function Home() {
 							{stops.length > 0 ? stops[stops.length - 1].stop.stop_name : "/"}
 						</div>
 					</div>
-					<div style={{ width: "100%" }}>
+					<div style={{ width: "100%", position:"relative" }}>
 						<input
 							step={"0.01"}
 							min={0}
