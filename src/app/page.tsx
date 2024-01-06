@@ -1,4 +1,5 @@
 'use client';
+
 import styles from './page.module.css'
 import React, { useEffect, useMemo, useRef, useState } from "react"
 // @ts-ignore
@@ -8,41 +9,11 @@ import { BitmapLayer, FlyToInterpolator, IconLayer, PathLayer, TileLayer, WebMer
 // @ts-ignore
 import { ScatterplotLayer } from 'deck.gl';
 import Supercluster from 'supercluster';
+import InfoBar from '@/components/info-bar/info-bar';
+import { getBusIcon, getStopIcon, getStops } from '@/utils/utils';
+import useStore from '@/components/store';
+
 const MAX_ZOOM = 12
-
-
-const measure = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-	const R = 6378.137;
-
-	const phi1 = lat1 * Math.PI / 180;
-	const phi2 = lat2 * Math.PI / 180;
-
-	const dLat = (lat2 - lat1) * Math.PI / 180;
-	const dLon = (lon2 - lon1) * Math.PI / 180;
-
-	const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-		Math.cos(phi1) * Math.cos(phi2) *
-		Math.sin(dLon / 2) * Math.sin(dLon / 2);
-	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	const d = R * c;
-	return d;
-}
-
-
-const createSVGIcon = (id: string) =>
-	`<svg viewBox="0 0 200 250" width="200" height="250" xmlns="http://www.w3.org/2000/svg"><linearGradient id="a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffed00"/><stop offset="1" stop-color="#d6ac00"/></linearGradient><path style="fill:url(#a)" d="M 0 0 L 0 200 L 100 250 L 200 200 L 200 0 L 0 0 Z"/><path fill="#1E3050" d="M 100.007 73.679 C 126.196 73.679 147.014 81.065 147.014 90.467 L 147.014 160.977 C 147.018 164.688 144.008 167.697 140.298 167.693 L 140.298 174.409 C 140.301 178.118 137.293 181.126 133.584 181.123 L 126.868 181.123 C 123.158 181.127 120.149 178.119 120.153 174.409 L 120.153 167.693 L 79.861 167.693 L 79.861 174.409 C 79.864 178.119 76.855 181.127 73.145 181.123 L 66.43 181.123 C 62.72 181.126 59.712 178.118 59.716 174.409 L 59.716 167.693 C 56.005 167.697 52.996 164.688 53 160.977 L 53 90.467 C 53 81.065 73.818 73.679 100.007 73.679 Z M 66.43 100.541 L 66.43 127.402 C 66.43 131.115 69.43 134.116 73.145 134.116 L 126.868 134.116 C 130.578 134.12 133.587 131.112 133.584 127.402 L 133.584 100.541 C 133.588 96.83 130.578 93.821 126.868 93.825 L 73.145 93.825 C 69.434 93.821 66.425 96.83 66.43 100.541 Z M 69.787 157.619 C 74.958 157.619 78.189 152.025 75.603 147.548 C 74.404 145.47 72.186 144.189 69.787 144.19 C 64.619 144.19 61.388 149.786 63.972 154.262 C 65.171 156.339 67.388 157.619 69.787 157.619 Z M 130.226 157.619 C 135.395 157.619 138.625 152.025 136.042 147.548 C 134.842 145.47 132.625 144.19 130.226 144.19 C 125.056 144.19 121.825 149.786 124.41 154.262 C 125.61 156.339 127.827 157.619 130.226 157.619 Z"/><text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 59px; font-weight:700; white-space: pre;" x="50%" text-anchor="middle" y="55">${id}</text></svg>`;
-
-
-const get_bus_icon = (d: any) => {
-	const svg = d.cluster ?
-		`<svg viewBox="0 0 200 250" width="200" height="250" xmlns="http://www.w3.org/2000/svg"><linearGradient id="a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffed00"/><stop offset="1" stop-color="#d6ac00"/></linearGradient><path style="fill:url(#a)" d="M0 0v200l100 50 100-50V0H0Z"/><path d="M59.35 39.035h81.288v88.524L99.993 150 59.35 127.559V39.035Zm9.202 46.917H95.85V74.809H68.552v11.143Zm0-21.378h63.01V53.431h-63.01v11.143Z" style="stroke:#000"/><path style="stroke:#000" d="M95.85 200v-56.956h8.292V200H95.85Zm28.788-113.883h51.451v56.031l-25.726 14.204-25.725-14.204V86.117Zm5.824 29.696h17.278v-7.053h-17.278v7.053Zm0-13.531h39.882v-7.053h-39.882v7.053Z"/><path style="stroke:#000" d="M147.74 188v-36.05h5.249V188h-5.249ZM23.899 86.117H75.35v56.031l-25.726 14.204-25.725-14.204V86.117Zm5.824 29.696h17.278v-7.053H29.723v7.053Zm0-13.531h39.882v-7.053H29.723v7.053Z"/><path style="stroke:#000" d="M47.001 188v-36.05h5.249V188h-5.249Z"/></svg>`
-		: `<svg viewBox="0 0 200 250" width="200" height="250" xmlns="http://www.w3.org/2000/svg"><linearGradient id="a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffed00"/><stop offset="1" stop-color="#d6ac00"/></linearGradient><path style="fill:url(#a)" d="M0 0v200l100 50 100-50V0H0Z"/><path d="M59.35 39.035h81.288v88.524L99.993 150 59.35 127.559V39.035Zm9.202 46.917H95.85V74.809H68.552v11.143Zm0-21.378h63.01V53.431h-63.01v11.143Z" style="stroke:#000"/><path style="stroke:#000" d="M95.85 200v-56.956h8.292V200z"/></svg>`
-	return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-}
-
-const svgToDataURL = (id: string) =>
-	`data:image/svg+xml;charset=utf-8,${encodeURIComponent(createSVGIcon(id))}`
-
 
 export default function Home() {
 	const [initialViewState, setInitialViewState] = useState({
@@ -55,41 +26,39 @@ export default function Home() {
 		transitionInterpolator: new FlyToInterpolator()
 	});
 
+	const {
+		currentStop, setCurrentStop,
+		currentTheoricalStop, setCurrentTheoricalStop,
+		uiData, setUiData,
+		currentLineStops, setCurrentLineStops,
+		currentLinePath, setCurrentLinePath,
 
-	const initialized = useRef(false)
+		setTheoricalPercentage,
+		setRealPercentage,
+		setCurrentBus,
+	} = useStore()
+
+
+	const [initialized, setInitialized] = useState(false)
+	const [bus_from_stop, setBusFromStop] = useState([] as any)
+	const [interactiveStop, setInteractiveStop] = useState([] as any)
+	const [activeStop, setActiveStop] = useState([{}] as any)
+	const [activeBuses, setActiveBuses] = useState({} as any)
 	const [buses, setBuses] = useState([])
 	const [popup, removePopup] = useState(false)
-
-	const [path, setPath] = useState([] as any)
-	const [stops, setStops] = useState([] as any)
-	const [currentBus, setCurrentBus] = useState({} as any)
-
 	const [showUi, setShowUi] = useState(false)
-	const [uiData, setUiData] = useState({} as any)
 	const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 	const [canConnect, setCanConnect] = useState(true);
-
 	const [refresh, setRefresh] = useState(false)
 	const [refreshTO, setRefreshTO] = useState(setTimeout(() => { }, 0))
-
-	const [current_stop_th, setCurrentStopTh] = useState(0)
-	const [current_stop, setCurrentStop] = useState(0)
+	const [viewport, setViewport] = useState({ north: 0, east: 0, south: 0, west: 0, zoom: 0 })
+	const [showStop, setShowStop] = useState(false)
+	const [isStopActive, setIsStopActive] = useState(false)
 
 	const supercluster = useMemo(() => new Supercluster({
 		maxZoom: 15,
 		radius: 40,
 	}), [])
-
-	const [viewport, setViewport] = useState({ north: 0, east: 0, south: 0, west: 0, zoom: 0 })
-	const [showStop, setShowStop] = useState(false)
-	const [interactiveStop, setInteractiveStop] = useState([] as any)
-
-	const [isStopActive, setIsStopActive] = useState(false)
-	const [activeStop, setActiveStop] = useState([{}] as any)
-	const [activeBuses, setActiveBuses] = useState({} as any)
-
-	const [bus_from_stop, setBusFromStop] = useState([] as any)
-
 
 	const nearest_point_to_line = (pt1: [number, number], pt2: [number, number], pt: [number, number]) => {
 		const x1 = pt1[0]
@@ -124,13 +93,13 @@ export default function Home() {
 		return squared_distance
 	}
 
-	const theoPercentage = useMemo(() => {
-		return stops.length != 0 ? current_stop_th / (stops.length - 1) * 100 : 0
-	}, [current_stop_th])
+	useEffect(() => {
+		setTheoricalPercentage(currentLineStops.length != 0 ? currentTheoricalStop / (currentLineStops.length - 1) * 100 : 0)
+	}, [currentTheoricalStop])
 
-	const realPercentage = useMemo(() => {
-		return stops.length != 0 ? current_stop / (stops.length - 1) * 100 : 0
-	}, [current_stop])
+	useEffect(() => {
+		setRealPercentage(currentLineStops.length != 0 ? currentStop / (currentLineStops.length - 1) * 100 : 0)
+	}, [currentStop])
 
 	useEffect(() => {
 		if (refreshTO) clearTimeout(refreshTO)
@@ -144,7 +113,7 @@ export default function Home() {
 		if (!uiData?.id) return
 
 		//If no path, no stops or not enough stops, just return
-		if (!path.length || stops.length === 0 || stops.length < 3)
+		if (!currentLinePath.length || currentLineStops.length === 0 || currentLineStops.length < 3)
 			return
 
 		const bus = buses.find((e: any) => e.id === uiData.id) as any
@@ -157,18 +126,18 @@ export default function Home() {
 		let secondes = hours * 3600 + minutes * 60
 
 		//If format 24:01:01 due to same day buses, just align
-		if (stops[stops.length - 1].arrival_time > 86400)
+		if (currentLineStops[currentLineStops.length - 1].arrival_time > 86400)
 			secondes += 86400
 
 		//get the stop where the bus should be heading
 		let nearest_th = 0;
-		for (let i = 0; i < stops.length - 1; i++) {
-			if (stops[i].arrival_time > secondes) break
+		for (let i = 0; i < currentLineStops.length - 1; i++) {
+			if (currentLineStops[i].arrival_time > secondes) break
 			else nearest_th = i + 1;
 		}
-		setCurrentStopTh(nearest_th)
+		setCurrentTheoricalStop(nearest_th)
 
-		const stop_dist = stops.map((e: any) => {
+		const stop_dist = currentLineStops.map((e: any) => {
 			return ((e.coord[0] - bus.longitude) ** 2 + (e.coord[1] - bus.latitude) ** 2)
 		})
 
@@ -179,15 +148,15 @@ export default function Home() {
 		if (nearest === 0 || nearest == 1) {
 			setCurrentStop(nearest)
 			return
-		} else if (nearest === stops.length - 1) {
+		} else if (nearest === currentLineStops.length - 1) {
 			setCurrentStop(nearest)
 			return
 		}
 
 		//around current nearest, check nearest line => determine direction
-		const pt_nearest_prev = stops[nearest - 1].coord
-		const pt_nearest = stops[nearest].coord
-		const pt_nearest_next = stops[nearest + 1].coord
+		const pt_nearest_prev = currentLineStops[nearest - 1].coord
+		const pt_nearest = currentLineStops[nearest].coord
+		const pt_nearest_next = currentLineStops[nearest + 1].coord
 		const pt_bus = [bus.longitude, bus.latitude] as [number, number]
 		const dist_n1_np1 = nearest_point_to_line(pt_nearest_prev, pt_nearest, pt_bus)
 		const dist_n1_nm1 = nearest_point_to_line(pt_nearest, pt_nearest_next, pt_bus)
@@ -251,8 +220,8 @@ export default function Home() {
 
 
 	useEffect(() => {
-		if (!initialized.current) {
-			initialized.current = true
+		if (!initialized) {
+			setInitialized(true);
 			connectWebSocket();
 		}
 
@@ -266,9 +235,23 @@ export default function Home() {
 
 
 	const onClickBus = async (d: any) => {
-		setUiData({})
-		setPath([])
-		setCurrentBus({})
+		setUiData({
+			id: "",
+			longName: "",
+		})
+		setCurrentLinePath([{ path: [] }])
+		setCurrentBus({
+			current_stop: 0,
+			id: '',
+			last_update: 0,
+			latitude: 0,
+			longitude: 0,
+			line: '',
+			line_id: '',
+			speed: 0,
+			trip_id: ''
+		})
+
 		setInitialViewState(
 			{
 				...initialViewState, latitude: d.object.latitude, longitude: d.object.longitude, zoom: 14, bearing: 0,
@@ -310,20 +293,25 @@ export default function Home() {
 					...stop,
 				})
 			}
-			setStops(new_stops)
+			console.log(new_stops)
+			setCurrentLineStops(new_stops)
 
-			let path = [];
+			let path = [] as any[][2];
 			for (let point of (json_data_shape as any[])) {
 				path.push([point.shape_pt_lon, point.shape_pt_lat])
 			}
-			setPath([{ path }])
+			setCurrentLinePath([{ path }])
 			setCurrentBus(d.object)
-			setUiData({ ln: json_data_info.route_long_name, id: d.object.id })
+			console.log(d.object)
+			setUiData({ longName: json_data_info.route_long_name, id: d.object.id })
 			setShowUi(true)
 
 		} catch (e) {
 			setShowUi(false)
-			setUiData({})
+			setUiData({
+				longName: '',
+				id: ''
+			})
 			console.log(e)
 		}
 
@@ -384,7 +372,7 @@ export default function Home() {
 			},
 			// @ts-ignore
 			getIcon: (d: any) => ({
-				url: svgToDataURL(d.line),
+				url: getBusIcon(d.line),
 				width: 50,
 				height: 62.5,
 				anchorX: 25,
@@ -403,7 +391,7 @@ export default function Home() {
 			},
 			// @ts-ignore
 			getIcon: (d: any) => ({
-				url: svgToDataURL(d.line),
+				url: getStopIcon(d.line),
 				width: 50,
 				height: 62.5,
 				anchorX: 25,
@@ -422,7 +410,7 @@ export default function Home() {
 			},
 			// @ts-ignore
 			getIcon: (d: any) => ({
-				url: get_bus_icon(d),
+				url: getStopIcon(d),
 				width: 50,
 				height: 62.5,
 				anchorX: 25,
@@ -479,7 +467,7 @@ export default function Home() {
 			},
 			// @ts-ignore
 			getIcon: (d: any) => ({
-				url: get_bus_icon(d),
+				url: getStopIcon(d),
 				width: 50,
 				height: 62.5,
 				anchorX: 25,
@@ -507,7 +495,7 @@ export default function Home() {
 		}),
 		new PathLayer({
 			id: 'bus-path-layer',
-			data: path,
+			data: currentLinePath,
 			pickable: true,
 			widthScale: 20,
 			widthMinPixels: 2,
@@ -518,7 +506,7 @@ export default function Home() {
 
 		new ScatterplotLayer({
 			id: 'scatterplot-layer',
-			data: stops,
+			data: currentLineStops,
 			pickable: true,
 			opacity: 1,
 			stroked: true,
@@ -541,100 +529,10 @@ export default function Home() {
 		setActiveBuses({});
 	}
 
-	const arrets = useMemo(() => {
-		if (!currentBus) return
-		if (current_stop === -1 || !stops[current_stop] || current_stop_th === -1 || !stops[current_stop_th]) return (
-			<div style={{ display: "flex", flex: "1", width: "100%", alignItems: "center" }}>
-				<div style={{ flex: '1', padding: "15px", display: "flex", justifyContent: "center" }}>
-					No more stops
-				</div>
-			</div>
-		)
-
-		const time = new Date()
-		const hours = time.getHours()
-		const minutes = time.getMinutes()
-		let secondes = hours * 3600 + minutes * 60
-		const arrival = stops[current_stop].arrival_time
-		if (arrival > 86400)
-			secondes += 86400
-
-
-		if (!path.length || !stops.length) return
-
-		//nearest point on path
-		const bus_pos = [currentBus.longitude, currentBus.latitude]
-		let bus_to_path = path[0].path.map((e: [number, number]) => {
-			return ((e[0] - bus_pos[0]) ** 2 + (e[1] - bus_pos[1]) ** 2)
-		})
-		let nearest_idx_bus = 0;
-		for (let i = 1; i < bus_to_path.length; i++)
-			nearest_idx_bus = bus_to_path[i] < bus_to_path[nearest_idx_bus] ? i : nearest_idx_bus;
-
-		const nearest_path_bus = path[0].path[nearest_idx_bus]
-
-		let stop_to_path = path[0].path.map((e: [number, number]) => {
-			return ((e[0] - stops[current_stop].coord[0]) ** 2 + (e[1] - stops[current_stop].coord[1]) ** 2)
-		})
-		let nearest_idx_path = 0;
-		for (let i = 1; i < stop_to_path.length; i++)
-			nearest_idx_path = stop_to_path[i] < stop_to_path[nearest_idx_path] ? i : nearest_idx_path;
-
-
-		let point = path[0].path[nearest_idx_bus]
-		let real_dist = measure(point[1], point[0], bus_pos[1], bus_pos[0])
-		for (let i = nearest_idx_bus + 1; i < nearest_idx_path; i++) {
-			const sec_pt = path[0].path[i]
-			real_dist += measure(point[1], point[0], sec_pt[1], sec_pt[0])
-			point = sec_pt
-		}
-
-		const get_time = (delay: number) => {
-			const time = new Date(delay * 1000)
-			return time.getUTCHours().toString().padStart(2, '0') + ":" + time.getUTCMinutes().toString().padStart(2, '0')
-		}
-
-		const eta = (real_dist) / Math.max(currentBus.speed, 15) * 60
-		const delay_s = secondes - arrival
-		const delay_min = Math.floor(delay_s / 60) + Math.ceil(eta)
-		const delay = delay_min > 0 ? `+${delay_min}` : delay_min + Math.ceil(eta)
-		const html_delay = Math.abs(delay_min) >= 3 ? <span style={{ color: "red" }}>{delay}</span > : <span>{delay} </span>
-
-		return (
-			<div style={{ padding: "15px", display: "flex", flex: "1", width: "100%", alignItems: "center" }}>
-				<div className={styles.bus_container_left} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-					<span>{current_stop != 0 ? stops[current_stop - 1].stop.stop_name : "Départ"}</span>
-					<span>{current_stop != 0 ? get_time(stops[current_stop - 1].arrival_time) : ""}</span>
-				</div>
-
-				<div className={styles.bus_container_mid} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-					<span>{stops[current_stop].stop.stop_name} ({html_delay} minutes)</span>
-					<span>
-						{get_time(stops[current_stop].arrival_time)}  (<span style={{ color: "red" }}>&bull;</span>)
-						&#8594;
-						{get_time(stops[current_stop].arrival_time + delay_min * 60)}  (<span style={{ color: "#ffcd00" }}>&bull;</span>)
-					</span>
-					<span>{(real_dist * 1000).toFixed(2)}m</span>
-					<span>ETA (based on current speed) : {Math.ceil(eta)} minutes </span>
-				</div>
-
-				<div className={styles.bus_container_right} style={{ flex: '1', padding: "15px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-					<span>{current_stop != stops.length - 1 ? stops[current_stop + 1].stop.stop_name : "Arrivée"}</span>
-					<span>{current_stop != stops.length - 1 ? get_time(stops[current_stop + 1].arrival_time) : ""}</span>
-				</div>
-			</div>
-		)
-	}, [refresh, currentBus, current_stop])
-
-	const get_stops = async ({ north, east, south, west }: any) => {
-		try {
-			const data = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/stops?north=${north}&east=${east}&south=${south}&west=${west}`);
-			const json_data = await data.json()
-			if (!json_data || viewport.zoom < MAX_ZOOM) return;
-			setInteractiveStop(json_data)
-		} catch (e) {
-			console.log(e)
-		}
+	const GetViewportStops = async (north: number, south: number, east: number, west: number, zoom: number) => {
+		if (zoom < MAX_ZOOM) return
+		const stop = await getStops(north, south, east, west);
+		setInteractiveStop(stop)
 	}
 
 	const deckRef = useRef<DeckGL>(null);
@@ -674,8 +572,8 @@ export default function Home() {
 				borderBottom: "1px solid #110f0d"
 			}} className={styles.selection}>
 				<button onClick={() => { reset_focus(); setShowStop(false) }}>Live buses</button>
-				<button onClick={() => { reset_focus(); get_stops(viewport); setShowStop(true) }}>Stops</button>
-				<button onClick={() => { get_stops(viewport); reset_focus() }} style={{ display: isStopActive ? "inline" : "none" }}>Remove focus</button>
+				<button onClick={() => { reset_focus(); GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); setShowStop(true) }}>Stops</button>
+				<button onClick={() => { GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); reset_focus() }} style={{ display: isStopActive ? "inline" : "none" }}>Remove focus</button>
 			</div>
 			<div className={styles.map} style={{ height: '100%', width: '100%', position: 'relative' }}>
 				<DeckGL
@@ -687,10 +585,10 @@ export default function Home() {
 							// @ts-ignore
 							const se = viewport.unproject([viewport.width, viewport.height]);
 							setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
-							if (!showStop || isStopActive) return
-							get_stops({ north: nw[1], east: se[0], south: se[1], west: nw[0] })
-						})();
 
+							if (!showStop || isStopActive) return
+							GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
+						})();
 					}}
 					ref={deckRef}
 					style={{ display: "static" }}
@@ -703,95 +601,10 @@ export default function Home() {
 					// @ts-ignore
 					layers={layers} />
 			</div>
-			<div
-				className={styles.bus_container}
-				style={{
-					display: showUi ? "flex" : "none",
-					position: "fixed",
-					width: "70vw",
-					backgroundColor: "#fbf4e2",
-					bottom: "10px",
-					left: "50%",
-					transform: "translate(-50%, 0)",
-					zIndex: 10,
-					border: "1px solid #110f0d",
-					borderRadius: "5px",
-					flexDirection: "column",
-					alignItems: "center",
-				}}>
-				<div style={{ position: "relative", width: '100%' }}>
-					<div
-						onClick={() => {
-							setStops([]);
-							setPath([]);
-							setUiData({});
-							setShowUi(false)
-						}}
-						style={{ cursor: "pointer", position: "absolute", right: "0", top: "0", padding: "5px" }}>
-						x
-					</div>
-					<div
-						style={{ position: "absolute", left: "0", top: "0", padding: "5px" }}>
-						{(() => {
-							const now = new Date()
-							return <div>{`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`}</div>
-						})()
-						}
-					</div>
+			{
+				showUi ? <InfoBar /> : null
+			}
 
-				</div>
-				<div style={{
-					width: "100%",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-				}}>
-
-					<div style={{ flex: '1', padding: "25px 0", marginTop: "5px" }} className={styles.busTitle}>
-						{currentBus ? currentBus.line : "/"} : {uiData.ln}
-					</div>
-					<div style={{ width: "100%", flex: '1', display: "flex", flexDirection: "row", justifyContent: "space-between" }} className={styles.busEta}>
-						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
-							{stops.length > 0 ? stops[0].stop.stop_name : "/"}
-						</div>
-						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
-							&#8594;
-						</div>
-						<div style={{ padding: "15px", flex: 1, display: "flex", justifyContent: "center", textAlign: "center" }}>
-							{stops.length > 0 ? stops[stops.length - 1].stop.stop_name : "/"}
-						</div>
-					</div>
-					<div style={{ width: "100%", position:"relative" }}>
-						<input
-							step={"0.01"}
-							min={0}
-							max={100}
-							style={{ zIndex: 1, height: 0 }}
-							className={`${styles.slider} ${styles.theorical}`}
-							value={theoPercentage}
-							type="range"
-							readOnly
-						/>
-
-						<input
-							step={"0.01"}
-							min={0}
-							max={100}
-							style={{ transform: "translateY(-1px)" }}
-							className={`${styles.slider} ${styles.real}`}
-							value={realPercentage}
-							type="range"
-							readOnly
-						/>
-					</div>
-					{arrets}
-					<div style={{ padding: "15px", flex: '1', display: 'flex', alignItems: "center", flexDirection: "column" }}>
-						<p><b style={{ color: "#ffcd00", backgroundColor: "black" }}>Yellow</b>: real time.</p>
-						<p><b style={{ color: "red", backgroundColor: "black" }}>Red</b>: theorical time.</p>
-						<p>BUS NUMBER : {currentBus ? currentBus.id : "/"}</p>
-					</div>
-				</div>
-			</div>
 
 			<div style={{
 				position: "absolute",
