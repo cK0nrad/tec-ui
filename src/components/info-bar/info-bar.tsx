@@ -60,10 +60,10 @@ const InfoBar = ({ }: Props) => {
 		for (let i = 1; i < stop_to_path.length; i++)
 			nearest_idx_path = stop_to_path[i] < stop_to_path[nearest_idx_path] ? i : nearest_idx_path;
 
-		if(!nearest_idx_bus)
-			nearest_idx_bus += 1
-		
-		if ((currentLinePath[0].path.length < nearest_idx_bus - 1)) 
+		if (!nearest_idx_bus)
+			nearest_idx_bus = 1
+
+		if (!currentLinePath[0].path.length || (currentLinePath[0].path.length < nearest_idx_bus - 1))
 			return;
 
 		let point = currentLinePath[0].path[nearest_idx_bus]
