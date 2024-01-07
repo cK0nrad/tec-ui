@@ -390,7 +390,7 @@ export default function Home() {
 			},
 			// @ts-ignore
 			getIcon: (d: any) => ({
-				url: getStopIcon(d.line),
+				url: getBusIcon(d.line),
 				width: 50,
 				height: 62.5,
 				anchorX: 25,
