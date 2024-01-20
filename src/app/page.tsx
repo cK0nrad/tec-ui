@@ -10,17 +10,18 @@ import { BitmapLayer, FlyToInterpolator, IconLayer, PathLayer, TileLayer, WebMer
 import { ScatterplotLayer } from 'deck.gl';
 import Supercluster from 'supercluster';
 import InfoBar from '@/components/info-bar/info-bar';
-import { getBusIcon, getStopIcon, getStops } from '@/utils/utils';
+import { getBusIcon, getStopIcon, getStops, safeGet } from '@/utils/utils';
 import useStore from '@/components/store';
 import { logError, logInfo } from '@/utils/logger';
+import { Bus } from '@/components/type';
 
-const MAX_ZOOM = 12
+const MAX_ZOOM = 8
 
 export default function Home() {
 	const [initialViewState, setInitialViewState] = useState({
 		latitude: 50.6330,
 		longitude: 5.5697,
-		zoom: 12,
+		zoom: 8,
 		bearing: 0,
 		pitch: 0,
 		transitionDuration: 1000,
@@ -33,20 +34,19 @@ export default function Home() {
 		uiData, setUiData,
 		currentLineStops, setCurrentLineStops,
 		currentLinePath, setCurrentLinePath,
-		showUi, setShowUi, 
+		showUi, setShowUi,
 
 		setTheoricalPercentage,
 		setRealPercentage,
 		setCurrentBus,
 	} = useStore()
 
-
 	const [initialized, setInitialized] = useState(false)
-	const [bus_from_stop, setBusFromStop] = useState([] as any)
-	const [interactiveStop, setInteractiveStop] = useState([] as any)
+	const [bus_from_stop, setBusFromStop] = useState<any>([])
+	const [interactiveStop, setInteractiveStop] = useState<any>([])
 	const [activeStop, setActiveStop] = useState([{}] as any)
 	const [activeBuses, setActiveBuses] = useState({} as any)
-	const [buses, setBuses] = useState([])
+	const [buses, setBuses] = useState<Bus[]>([])
 	const [popup, removePopup] = useState(false)
 	const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 	const [canConnect, setCanConnect] = useState(true);
@@ -56,43 +56,14 @@ export default function Home() {
 	const [showStop, setShowStop] = useState(false)
 	const [isStopActive, setIsStopActive] = useState(false)
 
+	const [nextStop, setNextStop] = useState<[number, number][]>([[0, 0]])
+	const [hovering, setHovering] = useState<any>({})
+
 	const supercluster = useMemo(() => new Supercluster({
 		maxZoom: 15,
 		radius: 40,
 	}), [])
 
-	const nearest_point_to_line = (pt1: [number, number], pt2: [number, number], pt: [number, number]) => {
-		const x1 = pt1[0]
-		const y1 = pt1[1]
-
-		const x2 = pt2[0]
-		const y2 = pt2[1]
-
-		const x3 = pt[0]
-		const y3 = pt[1]
-
-		const px = x2 - x1
-		const py = y2 - y1
-		const dAB = px * px + py * py
-
-		const u = ((x3 - x1) * px + (y3 - y1) * py) / dAB
-
-		const x = x1 + u * px
-		const y = y1 + u * py
-
-		//check if x,y is out of the line
-		let outbound = false;
-		if (x < Math.min(x1, x2) || x > Math.max(x1, x2) || y < Math.min(y1, y2) || y > Math.max(y1, y2)) {
-			const d1 = (x - x1) * (x - x1) + (y - y1) * (y - y1)
-			const d2 = (x - x2) * (x - x2) + (y - y2) * (y - y2)
-			outbound = d1 > dAB || d2 > dAB
-		}
-		if (outbound) return Infinity
-
-		const squared_distance = (x - x3) * (x - x3) + (y - y3) * (y - y3)
-
-		return squared_distance
-	}
 
 	useEffect(() => {
 		setTheoricalPercentage(currentLineStops.length != 0 ? currentTheoricalStop / (currentLineStops.length - 1) * 100 : 0)
@@ -117,67 +88,21 @@ export default function Home() {
 		if (!currentLinePath.length || currentLineStops.length === 0 || currentLineStops.length < 3)
 			return
 
-		const bus = buses.find((e: any) => e.id === uiData.id) as any
-		setCurrentBus(bus)
+		const bus = buses.find((e: any) => e.id === uiData.id)
 		if (!bus) return
 
-		const currentTime = new Date()
-		const hours = currentTime.getHours()
-		const minutes = currentTime.getMinutes()
-		let secondes = hours * 3600 + minutes * 60
-
-		//If format 24:01:01 due to same day buses, just align
-		if (currentLineStops[currentLineStops.length - 1].arrival_time > 86400)
-			secondes += 86400
-
-		//get the stop where the bus should be heading
-		let nearest_th = 0;
-		for (let i = 0; i < currentLineStops.length - 1; i++) {
-			if (currentLineStops[i].arrival_time > secondes) break
-			else nearest_th = i + 1;
+		setCurrentBus(bus)
+		console.log(bus.delay)
+		setCurrentTheoricalStop(bus.theorical_stop)
+		setCurrentStop(bus.next_stop)
+		if (bus.next_stop >= currentLinePath[0].path.length) {
+			setNextStop([currentLinePath[0].path[currentLinePath[0].path.length - 1]])
+		} else {
+			const next_stop = currentLineStops[bus.next_stop]
+			setNextStop([[parseFloat(next_stop.stop.stop_lon), parseFloat(next_stop.stop.stop_lat)]])
 		}
-		setCurrentTheoricalStop(nearest_th)
-
-		const stop_dist = currentLineStops.map((e: any) => {
-			return ((e.coord[0] - bus.longitude) ** 2 + (e.coord[1] - bus.latitude) ** 2)
-		})
-
-		let nearest = 0;
-		for (let i = 1; i < stop_dist.length; i++)
-			nearest = stop_dist[i] < stop_dist[nearest] ? i : nearest;
-
-		if (nearest === 0 || nearest == 1) {
-			setCurrentStop(nearest)
-			return
-		} else if (nearest === currentLineStops.length - 1) {
-			setCurrentStop(nearest)
-			return
-		}
-
-		//around current nearest, check nearest line => determine direction
-		const pt_nearest_prev = currentLineStops[nearest - 1].coord
-		const pt_nearest = currentLineStops[nearest].coord
-		const pt_nearest_next = currentLineStops[nearest + 1].coord
-		const pt_bus = [bus.longitude, bus.latitude] as [number, number]
-		const dist_n1_np1 = nearest_point_to_line(pt_nearest_prev, pt_nearest, pt_bus)
-		const dist_n1_nm1 = nearest_point_to_line(pt_nearest, pt_nearest_next, pt_bus)
-
-		//either the previous point is neared but heading to next
-		//or the next point is neared and also heading to next
-		if (dist_n1_np1 > dist_n1_nm1) {
-			nearest += 1
-		}
-		setCurrentStop(nearest)
 	}, [refresh, uiData])
 
-	const update_buses = useMemo(() => {
-		if (isStopActive && bus_from_stop.length > 0) {
-			const line_bus = buses.filter((e: any) => {
-				return bus_from_stop.includes(e.line_id)
-			})
-			setActiveBuses(line_bus)
-		}
-	}, [buses, bus_from_stop, isStopActive])
 
 	const connectWebSocket = async () => {
 		if (!canConnect) return;
@@ -200,7 +125,7 @@ export default function Home() {
 				let ds = new DecompressionStream("gzip");
 				let decompressedStream = message.data.stream().pipeThrough(ds);
 				new Response(decompressedStream).text().then(e => {
-					const data = JSON.parse(atob(e))
+					const data = JSON.parse(atob(e)) as Bus[]
 					setBuses(data)
 				})
 			} catch (e) {
@@ -242,15 +167,18 @@ export default function Home() {
 		})
 		setCurrentLinePath([{ path: [] }])
 		setCurrentBus({
-			current_stop: 0,
+			next_stop: 0,
 			id: '',
 			last_update: 0,
 			latitude: 0,
 			longitude: 0,
 			line: '',
 			line_id: '',
-			speed: 0,
-			trip_id: ''
+			average_speed: 0,
+			trip_id: '',
+			remaining_distance: 0,
+			theorical_stop: 0,
+			delay: 0
 		})
 
 		setInitialViewState(
@@ -259,20 +187,20 @@ export default function Home() {
 			}
 		)
 		try {
-			const data_info = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`);
-			const data_shape = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/shape?trip_id=${d.object.trip_id}`);
-			const data_theorical = await fetch(`${process.env.NEXT_PUBLIC_GTFS_API}/theorical?trip_id=${d.object.trip_id}`);
+			if (!d.object.trip_id || d.object.trip_id == "?") {
+				setCurrentLineStops([]);
+				setCurrentLinePath([{ path: [] }]);
+				setUiData({
+					longName: '',
+					id: ''
+				});
+				setShowUi(false)
+				return
+			}
 
-			if (
-				data_shape.status !== 200 ||
-				data_theorical.status !== 200 ||
-				data_info.status !== 200
-			)
-				return;
-
-			const json_data_info = await data_info.json()
-			const json_data_shape = await data_shape.json()
-			const json_data_theorical = await data_theorical.json()
+			const json_data_info = await safeGet(`${process.env.NEXT_PUBLIC_GTFS_API}/info?trip_id=${d.object.trip_id}`)
+			const json_data_theorical = await safeGet(`${process.env.NEXT_PUBLIC_GTFS_API}/theorical?trip_id=${d.object.trip_id}`)
+			const json_data_shape = await safeGet(`${process.env.NEXT_PUBLIC_GTFS_API}/shape?trip_id=${d.object.trip_id}`)
 
 			if (
 				!json_data_info ||
@@ -404,6 +332,7 @@ export default function Home() {
 			id: "current-stop-layer",
 			visible: isStopActive,
 			data: activeStop,
+			onHover: (e: any) => setHovering(Boolean(e)),
 			getPosition: (d: any) => {
 				return [d.x, d.y, 10]
 			},
@@ -495,7 +424,7 @@ export default function Home() {
 		new PathLayer({
 			id: 'bus-path-layer',
 			data: currentLinePath,
-			pickable: true,
+			pickable: false,
 			widthScale: 20,
 			widthMinPixels: 2,
 			getPath: (d: any) => d.path,
@@ -504,9 +433,9 @@ export default function Home() {
 		}),
 
 		new ScatterplotLayer({
-			id: 'scatterplot-layer',
+			id: 'stops-layer',
 			data: currentLineStops,
-			pickable: true,
+			pickable: false,
 			opacity: 1,
 			stroked: true,
 			filled: true,
@@ -517,9 +446,28 @@ export default function Home() {
 			getLineWidth: () => .1,
 			getPosition: (d: any) => d.coord,
 			getRadius: () => .2,
-			getFillColor: () => [255, 237, 0],
+			getFillColor: () => [237, 255, 0],
 			getLineColor: () => [0, 0, 0]
 		}),
+
+		new ScatterplotLayer({
+			visible: showUi,
+			id: 'next-stop-layer',
+			data: nextStop,
+			pickable: false,
+			opacity: 1,
+			stroked: true,
+			filled: true,
+			radiusScale: 10,
+			radiusMinPixels: 5,
+			radiusMaxPixels: 100,
+			lineWidthMinPixels: 1,
+			getLineWidth: () => .1,
+			getPosition: (d: any) => d,
+			getRadius: () => .2,
+			getFillColor: () => [255, 16, 240],
+			getLineColor: () => [0, 0, 0]
+		})
 	];
 
 	const reset_focus = () => {

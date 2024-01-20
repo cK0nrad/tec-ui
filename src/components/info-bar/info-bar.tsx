@@ -1,11 +1,6 @@
-import { earthMeasure } from '@/utils/utils';
 import styles from './info-bar.module.css'
 import useStore from "@/components/store";
 import { useMemo } from 'react';
-import { logError, logInfo } from '@/utils/logger';
-
-
-
 type Props = {
 
 }
@@ -33,56 +28,15 @@ const InfoBar = ({ }: Props) => {
 				</div>
 			</div>
 		)
-		const time = new Date()
-		const hours = time.getHours()
-		const minutes = time.getMinutes()
-		let secondes = hours * 3600 + minutes * 60
-		const arrival = currentLineStops[currentStop].arrival_time
-		if (arrival > 86400)
-			secondes += 86400
-
-		if (!currentLinePath[0].path.length || !currentLineStops.length) return
-
-		//nearest point on path
-		const bus_pos = [currentBus.longitude, currentBus.latitude]
-		let bus_to_path = currentLinePath[0].path.map((e: [number, number]) => {
-			return ((e[0] - bus_pos[0]) ** 2 + (e[1] - bus_pos[1]) ** 2)
-		})
-		let nearest_idx_bus = 0;
-		for (let i = 1; i < bus_to_path.length; i++)
-			nearest_idx_bus = bus_to_path[i] < bus_to_path[nearest_idx_bus] ? i : nearest_idx_bus;
-
-		let stop_to_path = currentLinePath[0].path.map((e: [number, number]) => {
-			return ((e[0] - currentLineStops[currentStop].coord[0]) ** 2 + (e[1] - currentLineStops[currentStop].coord[1]) ** 2)
-		})
-
-		let nearest_idx_path = 0;
-		for (let i = 1; i < stop_to_path.length; i++)
-			nearest_idx_path = stop_to_path[i] < stop_to_path[nearest_idx_path] ? i : nearest_idx_path;
-
-		if (!nearest_idx_bus)
-			nearest_idx_bus = 1
-
-		if (currentLinePath[0].path.length < nearest_idx_bus - 1)
-			return;
-
-		let point = currentLinePath[0].path[nearest_idx_bus]
-		let real_dist = earthMeasure(point[1], point[0], bus_pos[1], bus_pos[0])
-		for (let i = nearest_idx_bus + 1; i < nearest_idx_path; i++) {
-			const sec_pt = currentLinePath[0].path[i]
-			real_dist += earthMeasure(point[1], point[0], sec_pt[1], sec_pt[0])
-			point = sec_pt
-		}
 
 		const get_time = (delay: number) => {
 			const time = new Date(delay * 1000)
 			return time.getUTCHours().toString().padStart(2, '0') + ":" + time.getUTCMinutes().toString().padStart(2, '0')
 		}
 
-		const eta = (real_dist) / Math.max(currentBus.speed, 15) * 60
-		const delay_s = secondes - arrival
-		const delay_min = Math.floor(delay_s / 60) + Math.ceil(eta)
-		const delay = delay_min > 0 ? `+${delay_min}` : delay_min + Math.ceil(eta)
+		const eta = (currentBus.remaining_distance) / (Math.max(currentBus.average_speed, 1) * 1000) * 60
+		const delay_min = Math.floor(currentBus.delay / 60)
+		const delay = delay_min > 0 ? `+${delay_min}` : delay_min
 		const html_delay = Math.abs(delay_min) >= 3 ? <span style={{ color: "red" }}>{delay}</span > : <span>{delay} </span>
 
 		return (
@@ -99,7 +53,7 @@ const InfoBar = ({ }: Props) => {
 						&#8594;
 						{get_time(currentLineStops[currentStop].arrival_time + delay_min * 60)}  (<span style={{ color: "#ffcd00" }}>&bull;</span>)
 					</span>
-					<span>{(real_dist * 1000).toFixed(2)}m</span>
+					<span>{currentBus.remaining_distance.toFixed(2)}m</span>
 					<span>ETA (based on current speed) : {Math.ceil(eta)} minutes </span>
 				</div>
 

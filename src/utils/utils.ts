@@ -53,4 +53,15 @@ const getStopIcon = (d: any) => {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-export { earthMeasure, getStops, getBusIcon, getStopIcon, createSVGIcon };
+
+const safeGet = async (url: string): Promise<null | any> => {
+    const data = await fetch(url);
+    if (data.status !== 200) return null;
+
+    const json_data = await data.json();
+    if (!json_data) return null;
+
+    return json_data;
+}
+
+export { earthMeasure, getStops, getBusIcon, getStopIcon, createSVGIcon, safeGet };

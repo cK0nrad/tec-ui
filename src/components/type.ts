@@ -18,20 +18,26 @@ type Stop = {
 type StopMeta = {
     stop_id: string,
     stop_name: string,
-    stop_lon: number,
-    stop_lat: number,
+    stop_lon: string,
+    stop_lat: string,
 }
 
 type Bus = {
-    current_stop: number;
+    next_stop: number;
+    theorical_stop: number;
+
     id: string;
+    line: string; //shortname
+    line_id: string;
     last_update: number;
     latitude: number;
     longitude: number;
-    line: string; //shortname
-    line_id: string;
-    speed: number;
+    average_speed: number;
     trip_id: string;
+    
+    remaining_distance: number;
+    delay: number;
+    
 }
 
 type UiData = {
