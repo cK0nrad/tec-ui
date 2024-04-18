@@ -1,25 +1,25 @@
+import useCurrentBusStore from '@/stores/currentBus';
 import styles from './info-bar.module.css'
-import useStore from "@/components/store";
 import { useMemo } from 'react';
+import useDataStore from '@/stores/data';
+import useThemeStore from '@/stores/theme';
 type Props = {
 
 }
 
 const InfoBar = ({ }: Props) => {
+	const currentBus = useCurrentBusStore();
+
+	const theme = useThemeStore()
+
 	const {
-		realPercentage,
-		theoricalPercentage,
-		currentBus,
-		currentLineStops,
-		uiData, setUiData,
-		currentStop,
-		currentTheoricalStop, setCurrentLineStops,
-		currentLinePath, setCurrentLinePath,
-		setShowUi
-	} = useStore()
+		uiData, currentStop, currentLineStops,
+		currentTheoricalStop, theoricalPercentage,
+		realPercentage, currentLinePath, setCurrentLineStops,
+		setCurrentLinePath, setUiData,
+	} = useDataStore();
 
 	const arrets = useMemo(() => {
-
 		if (!currentBus) return
 		if (currentStop === -1 || !currentLineStops[currentStop] || currentTheoricalStop === -1 || !currentLineStops[currentTheoricalStop]) return (
 			<div style={{ display: "flex", flex: "1", width: "100%", alignItems: "center" }}>
@@ -73,17 +73,29 @@ const InfoBar = ({ }: Props) => {
 				display: "flex",
 				position: "fixed",
 				width: "70vw",
-				backgroundColor: "#fbf4e2",
+				backgroundColor: theme.bgColor,
 				bottom: "10px",
 				left: "50%",
 				transform: "translate(-50%, 0)",
 				zIndex: 10,
-				border: "1px solid #110f0d",
-				borderRadius: "5px",
+				boxShadow: "0px 0px 10px 0px #000000",
+				borderRadius: 15,
 				flexDirection: "column",
 				alignItems: "center",
+				color: theme.textColor
+			
 			}}>
-			<div style={{ position: "relative", width: '100%' }}>
+			<div style={{ display: "flex", justifyContent:"space-between" , width: '100%', backgroundColor: theme.bgColor, }}>
+
+			<div
+					style={{ left: "0", top: "0", padding: "5px" }}>
+					{(() => {
+						const now = new Date()
+						return <div>{`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`}</div>
+					})()
+					}
+				</div>
+
 				<div
 					onClick={() => {
 						setCurrentLineStops([]);
@@ -92,19 +104,12 @@ const InfoBar = ({ }: Props) => {
 							longName: '',
 							id: ''
 						});
-						setShowUi(false)
+						currentBus.removeBus()
 					}}
-					style={{ cursor: "pointer", position: "absolute", right: "0", top: "0", padding: "5px" }}>
+					style={{ cursor: "pointer", textAlign: "center", right: "0", top: "0", padding: "5px", width: "20px", height: "20px" }}>
 					x
 				</div>
-				<div
-					style={{ position: "absolute", left: "0", top: "0", padding: "5px" }}>
-					{(() => {
-						const now = new Date()
-						return <div>{`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`}</div>
-					})()
-					}
-				</div>
+				
 
 			</div>
 			<div style={{
@@ -112,6 +117,8 @@ const InfoBar = ({ }: Props) => {
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
+				overflowY: "scroll",
+				overflowX: "hidden"
 			}}>
 
 				<div style={{ flex: '1', padding: "25px 0", marginTop: "5px" }} className={styles.busTitle}>
@@ -144,7 +151,7 @@ const InfoBar = ({ }: Props) => {
 						step={"0.01"}
 						min={0}
 						max={100}
-						style={{ transform: "translateY(-1px)" }}
+						style={{ transform: "translateY(-1px)", backgroundColor: theme.textColor }}
 						className={`${styles.slider} ${styles.real}`}
 						value={realPercentage}
 						type="range"
@@ -153,8 +160,8 @@ const InfoBar = ({ }: Props) => {
 				</div>
 				{arrets}
 				<div style={{ padding: "15px", flex: '1', display: 'flex', alignItems: "center", flexDirection: "column" }}>
-					<p><b style={{ color: "#ffcd00", backgroundColor: "black" }}>Yellow</b>: real time.</p>
-					<p><b style={{ color: "red", backgroundColor: "black" }}>Red</b>: theorical time.</p>
+					<p><b style={{ color: "#e2c241", backgroundColor: theme.theme == "dark" ?  "white" : "dark" }}>Yellow</b>: real time.</p>
+					<p><b style={{ color: "red", backgroundColor: theme.theme == "dark" ?  "white" : "dark" }}>Red</b>: theorical time.</p>
 					<p>BUS NUMBER : {currentBus ? currentBus.id : "/"}</p>
 				</div>
 			</div>

@@ -1,4 +1,6 @@
 // Here we are using a unique massive data store for all the components. Gotta track the types somehow.
+// @ts-ignore
+import FlyToInterpolator from "@deck.gl/core/transitions/viewport-fly-to-interpolator";
 
 type MapStop = [
     string,
@@ -34,10 +36,10 @@ type Bus = {
     longitude: number;
     average_speed: number;
     trip_id: string;
-    
+
     remaining_distance: number;
     delay: number;
-    
+
 }
 
 type UiData = {
@@ -45,26 +47,22 @@ type UiData = {
     id: string;
 }
 
-interface Store {
-    realPercentage: number;
-    theoricalPercentage: number;
-    currentBus: Bus;
-    currentLineStops: Stop[];
-    uiData: UiData;
-    currentStop: number;
-    currentTheoricalStop: number;
-    currentLinePath: [{ path: [number, number][] }];
-    showUi: boolean;
-    setRealPercentage: (by: number) => void
-    setTheoricalPercentage: (by: number) => void
-    setCurrentBus: (bus: Bus) => void
-    setCurrentLineStops: (stops: Stop[]) => void
-    setUiData: (data: UiData) => void
-    setCurrentStop: (stop: number) => void
-    setCurrentTheoricalStop: (stop: number) => void
-    setCurrentLinePath: (path: [{ path: [number, number][] }]) => void
-    setShowUi: (show: boolean) => void
+type ViewState = {
+    latitude: number,
+    longitude: number,
+    zoom: number,
+    bearing: number,
+    pitch: number,
+    transitionDuration: number,
+    transitionInterpolator: FlyToInterpolator
 }
 
+type Viewport = {
+    north: number,
+    east: number,
+    south: number,
+    west: number,
+    zoom: number
+}
 
-export type { Store, Bus, UiData, Stop, StopMeta, MapStop };
+export type { Bus, UiData, Stop, StopMeta, MapStop, ViewState, Viewport };

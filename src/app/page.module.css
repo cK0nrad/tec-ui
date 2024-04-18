@@ -4,6 +4,9 @@
   height: 100%;
 }
 
+.topHolder {
+  z-index: 99;
+}
 
 .arrowUp {
   width: 0;
@@ -13,18 +16,13 @@
   border-top: 20px solid #ffcd00;
 }
 
-
-
-
-
-
 @media (max-width:1200px) {
   .popup {
     position: static !important;
     transform: none !important;
     border-radius: 0 !important;
-    display: inline;
-
+    top: 0 !important;
+    box-shadow: none !important;
   }
 
   #deckgl-wrapper {
@@ -33,11 +31,23 @@
 
   .main {
     display: flex;
+    flex-direction: column;
+  }
+  .menuHolder {
+    display: flex !important;
+  }
+
+  .topHolder {
+    box-shadow: 0px 0px 10px 0px #000000;
   }
 
   .selection {
     position: relative !important;
     transform: none !important;
     border-radius: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0  !important;
+    box-shadow: none !important;
   }
 }
