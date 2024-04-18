@@ -2,6 +2,8 @@
 // @ts-ignore
 import FlyToInterpolator from "@deck.gl/core/transitions/viewport-fly-to-interpolator";
 
+export const MAX_ZOOM: number = 8
+
 type MapStop = [
     string,
     {

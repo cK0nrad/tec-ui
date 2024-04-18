@@ -6,12 +6,11 @@ import Supercluster, { AnyProps, PointFeature } from "supercluster";
 import { getBusIcon, getStopIcon, getStops, safeGet } from '@/utils/utils';
 
 import { logError } from "@/utils/logger";
-import { Bus } from "@/components/type";
+import { Bus, MAX_ZOOM } from "@/components/type";
 import useCurrentBusStore from "@/stores/currentBus";
 import useViewportStore from "@/stores/currentViewport";
 import useDataStore from "@/stores/data";
 import useCurrentStopStore from "@/stores/currentStop";
-import { MAX_ZOOM } from "@/app/page";
 import useThemeStore from "@/stores/theme";
 import useFilterStore from "@/stores/filterStore";
 

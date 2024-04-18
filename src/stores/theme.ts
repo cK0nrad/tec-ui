@@ -1,3 +1,4 @@
+"use client";
 import { create } from 'zustand'
 
 type ThemeStore = {
@@ -9,8 +10,11 @@ type ThemeStore = {
 }
 
 const useThemeStore = create<ThemeStore>((set) => {
-    const currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
+    let currentTheme = false;
+    if (typeof window !== "undefined") {
+        currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+    }
+
     return ({
         theme: currentTheme ? "dark" : "light",
         bgColor: currentTheme ? "#110F0D" : "#eef0f2",

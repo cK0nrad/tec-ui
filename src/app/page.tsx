@@ -26,11 +26,10 @@ import locateDark from "../../public/locationDark.svg"
 import useThemeStore from '@/stores/theme';
 import { Inter } from 'next/font/google';
 import useViewportStore from '@/stores/currentViewport';
-import { Bus } from '@/components/type';
+import { Bus, MAX_ZOOM } from '@/components/type';
 import useFilterStore from '@/stores/filterStore';
 const inter = Inter({ subsets: ['latin'] })
 
-export const MAX_ZOOM = 8
 
 export default function Home() {
 	const initialViewState = useCurrentViewportStore();
@@ -81,11 +80,11 @@ export default function Home() {
 
 	useEffect(() => {
 		setTheoricalPercentage(currentLineStops.length != 0 ? currentTheoricalStop / (currentLineStops.length - 1) * 100 : 0)
-	}, [currentTheoricalStop])
+	}, [currentTheoricalStop, currentLineStops.length])
 
 	useEffect(() => {
 		setRealPercentage(currentLineStops.length != 0 ? currentStop / (currentLineStops.length - 1) * 100 : 0)
-	}, [currentStop])
+	}, [currentStop, currentLineStops.length])
 
 
 	useEffect(() => {

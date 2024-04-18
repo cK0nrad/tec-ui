@@ -63,7 +63,7 @@ const InfoBar = ({ }: Props) => {
 				</div>
 			</div>
 		)
-	}, [currentBus, currentStop, currentTheoricalStop, currentLineStops, currentLinePath]);
+	}, [currentBus, currentStop, currentTheoricalStop, currentLineStops]);
 
 
 	return (

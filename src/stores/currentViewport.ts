@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Bus, Store, ViewState } from '@/components/type';
+import { ViewState } from '@/components/type';
 
 //@ts-ignore
 import { FlyToInterpolator } from 'deck.gl';
