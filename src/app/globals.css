@@ -1,6 +1,7 @@
 * {
   margin: 0;
   user-select: none;
+  transition: background-color 0.25s ease; 
 }
 
 html {
@@ -14,3 +15,5 @@ body {
   overflow: hidden;
   width: 100%;
 }
+
+

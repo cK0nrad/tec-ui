@@ -52,9 +52,9 @@
         top: left;
         left: 0 !important;
         border-radius: 0 !important;
-        min-height: 30vh !important;
-        max-height: 30vh !important;
-        height: 30vh !important;
+        min-height: 35vh !important;
+        max-height: 35vh !important;
+        height: 35vh !important;
     }
 
     .bus_container div {

@@ -20,6 +20,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" >
+      <meta name="theme-color" />
       {children}
     </html>
   )

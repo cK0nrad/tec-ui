@@ -2,7 +2,7 @@ import useCurrentBusStore from '@/stores/currentBus';
 import styles from './info-bar.module.css'
 import { useMemo } from 'react';
 import useDataStore from '@/stores/data';
-import useThemeStore from '@/stores/theme';
+import useThemeStore, { getTheme } from '@/stores/theme';
 type Props = {
 
 }
@@ -10,7 +10,8 @@ type Props = {
 const InfoBar = ({ }: Props) => {
 	const currentBus = useCurrentBusStore();
 
-	const theme = useThemeStore()
+	const { theme } = useThemeStore()
+	const colorScheme = useMemo(() => getTheme(theme), [theme])
 
 	const {
 		uiData, currentStop, currentLineStops,
@@ -73,7 +74,7 @@ const InfoBar = ({ }: Props) => {
 				display: "flex",
 				position: "fixed",
 				width: "70vw",
-				backgroundColor: theme.bgColor,
+				backgroundColor: colorScheme.bgColor,
 				bottom: "10px",
 				left: "50%",
 				transform: "translate(-50%, 0)",
@@ -82,10 +83,10 @@ const InfoBar = ({ }: Props) => {
 				borderRadius: 15,
 				flexDirection: "column",
 				alignItems: "center",
-				color: theme.textColor
+				color: colorScheme.textColor
 			
 			}}>
-			<div style={{ display: "flex", justifyContent:"space-between" , width: '100%', backgroundColor: theme.bgColor, }}>
+			<div style={{ display: "flex", justifyContent:"space-between" , width: '100%', backgroundColor: colorScheme.bgColor, }}>
 
 			<div
 					style={{ left: "0", top: "0", padding: "5px" }}>
@@ -151,7 +152,7 @@ const InfoBar = ({ }: Props) => {
 						step={"0.01"}
 						min={0}
 						max={100}
-						style={{ transform: "translateY(-1px)", backgroundColor: theme.textColor }}
+						style={{ transform: "translateY(-1px)", backgroundColor: colorScheme.textColor }}
 						className={`${styles.slider} ${styles.real}`}
 						value={realPercentage}
 						type="range"
@@ -160,8 +161,8 @@ const InfoBar = ({ }: Props) => {
 				</div>
 				{arrets}
 				<div style={{ padding: "15px", flex: '1', display: 'flex', alignItems: "center", flexDirection: "column" }}>
-					<p><b style={{ color: "#e2c241", backgroundColor: theme.theme == "dark" ?  "white" : "dark" }}>Yellow</b>: real time.</p>
-					<p><b style={{ color: "red", backgroundColor: theme.theme == "dark" ?  "white" : "dark" }}>Red</b>: theorical time.</p>
+					<p><b style={{ color: "#e2c241", backgroundColor: theme == "dark" ?  "white" : "dark" }}>Yellow</b>: real time.</p>
+					<p><b style={{ color: "red", backgroundColor: theme == "dark" ?  "white" : "dark" }}>Red</b>: theorical time.</p>
 					<p>BUS NUMBER : {currentBus ? currentBus.id : "/"}</p>
 				</div>
 			</div>

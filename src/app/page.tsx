@@ -23,7 +23,7 @@ import sun from "../../public/sun.svg"
 import locate from "../../public/location.svg"
 import locateDark from "../../public/locationDark.svg"
 
-import useThemeStore from '@/stores/theme';
+import useThemeStore, { getTheme } from '@/stores/theme';
 import { Inter } from 'next/font/google';
 import useViewportStore from '@/stores/currentViewport';
 import { Bus, MAX_ZOOM } from '@/components/type';
@@ -38,7 +38,19 @@ export default function Home() {
 
 	const [popup, removePopup] = useState(false)
 
-	const theme = useThemeStore()
+	const { theme, switchTheme } = useThemeStore()
+
+	
+	
+	const colorScheme = useMemo(() => getTheme(theme), [theme])
+
+	useEffect(() => {
+		const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+		if (metaThemeColor) {
+			metaThemeColor.setAttribute('content', colorScheme.bgColor);
+		}
+	}, [colorScheme.bgColor]);
+
 
 	const {
 		uiData, currentLineStops, currentLinePath,
@@ -131,13 +143,12 @@ export default function Home() {
 
 	const deckRef = useRef<DeckGL>(null);
 	return (
-		<body className={inter.className} style={{ backgroundColor: theme.bgColor }}>
+		<body className={inter.className} style={{ backgroundColor: colorScheme.bgColor }}>
 			<main className={styles.main}>
 				<div className={styles.topHolder}>
 					<div className={styles.popupHolder}>
 						<div style={{
 							position: "fixed",
-
 							right: "50%",
 							transform: "translate(50%, 0)",
 							padding: '10px',
@@ -146,10 +157,10 @@ export default function Home() {
 							zIndex: 12,
 							display: popup ? "none" : "flex",
 							flexDirection: "column",
-							backgroundColor: theme.bgColor,
+							backgroundColor: colorScheme.bgColor,
 							borderRadius: 10,
 							textAlign: "center",
-							color: theme.textColor,
+							color: colorScheme.textColor,
 							flex: 1
 						}} className={styles.popup}>
 							Click on a bus to see details!
@@ -165,21 +176,21 @@ export default function Home() {
 							zIndex: 12,
 							display: "flex",
 							flexDirection: "column",
-							backgroundColor: theme.bgColor,
+							backgroundColor: colorScheme.bgColor,
 							borderRadius: 10,
 							textAlign: "center",
 							boxShadow: "0px 0px 10px 0px #000000",
 							flex: 1,
-							color: theme.textColor
+							color: colorScheme.textColor
 						}} className={styles.selection}>
 							Search a line
 							<input type="text" value={filter} onChange={searchBus} />
 							<div style={{ width: "100%", paddingTop: 5, display: "flex", flexDirection: "row" }}>
-								<div onClick={() => theme.switch()} style={{ flex: 1 }}>
-									<Image src={theme.theme == "light" ? moon : sun} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
+								<div onClick={() => switchTheme()} style={{ flex: 1 }}>
+									<Image src={theme == "light" ? moon : sun} width={20} height={20} alt="" style={{ fill: colorScheme.textColor }} />
 								</div>
 								<div onClick={getLocation} style={{ flex: 1 }}>
-									<Image src={theme.theme == "light" ? locate : locateDark} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
+									<Image src={theme == "light" ? locate : locateDark} width={20} height={20} alt="" style={{ fill: colorScheme.textColor }} />
 								</div>
 							</div>
 						</div>
@@ -192,7 +203,7 @@ export default function Home() {
 							zIndex: 10,
 							display: "flex",
 							flexDirection: "column",
-							backgroundColor: theme.bgColor,
+							backgroundColor: colorScheme.bgColor,
 							borderRadius: 15,
 							boxShadow: "0px 0px 10px 0px #000000",
 							flex: 1,

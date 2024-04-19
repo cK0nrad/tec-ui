@@ -2,32 +2,35 @@
 import { create } from 'zustand'
 
 type ThemeStore = {
-    theme: 'light' | 'dark'
-    switch(): void
-    // setDark: () => void;
-    // setLight: () => void;
+    switchTheme(): void
+    theme: ThemeList
+}
+
+type ThemeList = 'dark' | 'light'
+
+type Theme = {
     bgColor: string,
     textColor: string
 }
 
-const useThemeStore = create<ThemeStore>((set) => {
-    let currentTheme = false;
-    if (typeof window !== "undefined") {
-        currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-    }
+const darkTheme: Theme = {
+    bgColor: "#110F0D",
+    textColor: "#fff"
+}
 
-    return ({
-        theme: currentTheme ? "dark" : "light",
-        bgColor: currentTheme ? "#110F0D" : "#eef0f2",
-        textColor: currentTheme ? "#fff" : "#000",
-        switch: () => set((state) => ({
-            theme: state.theme === "light" ? "dark" : "light",
-            bgColor: state.theme === "light" ? "#110F0D" : "#eef0f2",
-            textColor: state.theme === "light" ? "#fff" : "#000"
-        }))
-        // setDark: () => set({ theme: 'dark', bgColor: "#110F0D", textColor: "#fff" }),
-        // setLight: () => set({ theme: 'light', bgColor: "#eef0f2", textColor: "#000" })
-    })
-})
+const lightTheme: Theme = {
+    bgColor: "#eef0f2",
+    textColor: "#000"
+}
+
+
+export const getTheme = (theme: ThemeList) => {
+    return theme == "dark" ? { ...darkTheme } : { ...lightTheme }
+}
+
+const useThemeStore = create<ThemeStore>((set) => ({
+    theme: "light",
+    switchTheme: () => set(({ theme }) => ({ theme: theme == "dark" ? "light" : "dark" }))
+}))
 
 export default useThemeStore;
