@@ -5,7 +5,7 @@ import DeckGL from '@deck.gl/react';
 import { WebMercatorViewport } from 'deck.gl';
 
 import styles from './page.module.css'
-import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
+import React, { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import InfoBar from '@/components/info-bar/info-bar';
 import { getStops } from '@/utils/utils';
@@ -37,8 +37,6 @@ export default function Home() {
 	const { buses } = WebSocketHook();
 
 	const [popup, removePopup] = useState(false)
-	const [refresh, setRefresh] = useState(false)
-	const [refreshTO, setRefreshTO] = useState(setTimeout(() => { }, 0))
 
 	const theme = useThemeStore()
 
@@ -54,7 +52,7 @@ export default function Home() {
 	} = useDataStore()
 
 
-	const { filter, setFilter } = useFilterStore() 
+	const { filter, setFilter } = useFilterStore()
 
 
 	const { setBus, isBusActive } = useCurrentBusStore()
@@ -80,33 +78,21 @@ export default function Home() {
 
 	useEffect(() => {
 		setTheoricalPercentage(currentLineStops.length != 0 ? currentTheoricalStop / (currentLineStops.length - 1) * 100 : 0)
-	}, [currentTheoricalStop, currentLineStops.length])
+	}, [currentTheoricalStop, currentLineStops.length, setTheoricalPercentage])
 
 	useEffect(() => {
 		setRealPercentage(currentLineStops.length != 0 ? currentStop / (currentLineStops.length - 1) * 100 : 0)
-	}, [currentStop, currentLineStops.length])
+	}, [currentStop, currentLineStops.length, setRealPercentage])
 
 
 	useEffect(() => {
-		if (refreshTO) clearTimeout(refreshTO)
-		const as = async (refresh: boolean) => {
-			let to = setTimeout(() => {
-				setRefresh(!refresh)
-			}, 1000)
-			setRefreshTO(to)
-		}
-		as(refresh)
 		if (!uiData?.id) return
-
 		//If no path, no stops or not enough stops, just return
 		if (!currentLinePath.length || currentLineStops.length === 0 || currentLineStops.length < 3)
 			return
 
 		const bus = buses.find((e: any) => e.id === uiData.id)
 		if (!bus) return
-
-
-		setBus(bus)
 
 		setCurrentTheoricalStop(bus.theorical_stop)
 		setCurrentStop(bus.next_stop)
@@ -116,7 +102,7 @@ export default function Home() {
 		} else {
 			setNextStop(currentLineStops[bus.next_stop].stop.stop_id)
 		}
-	}, [refresh, uiData])
+	}, [buses, uiData, currentLinePath, currentLineStops, setCurrentTheoricalStop, setCurrentStop, setNextStop])
 
 	const filteredBus = useMemo(() => buses.filter((bus: Bus) => bus.line.includes(filter)), [buses, filter]);
 	const layers = LayersHook(filteredBus);
@@ -125,6 +111,17 @@ export default function Home() {
 		removeStop();
 		setActiveBuses([]);
 	}
+
+	const changeViewState = useCallback((e: any) => {
+		if (e.interactionState.isDragging) return;
+		const viewport = new WebMercatorViewport(e.viewState);
+		const nw = viewport.unproject([0, 0]);
+		// @ts-ignore
+		const se = viewport.unproject([viewport.width, viewport.height]);
+		const newViewport = { north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom };
+		// if (!showStops || isStopActive) return
+		// GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
+	}, [])
 
 	const GetViewportStops = async (north: number, south: number, east: number, west: number, zoom: number) => {
 		if (zoom < MAX_ZOOM) return
@@ -140,7 +137,7 @@ export default function Home() {
 					<div className={styles.popupHolder}>
 						<div style={{
 							position: "fixed",
-							
+
 							right: "50%",
 							transform: "translate(50%, 0)",
 							padding: '10px',
@@ -216,17 +213,7 @@ export default function Home() {
 
 				<div className={styles.map} style={{ height: '100%', width: '100%', position: 'relative' }}>
 					<DeckGL
-						onViewStateChange={(e: any) => {
-							if (e.interactionState.isDragging) return;
-							const viewport = new WebMercatorViewport(e.viewState);
-							const nw = viewport.unproject([0, 0]);
-							// @ts-ignore
-							const se = viewport.unproject([viewport.width, viewport.height]);
-							setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
-
-							if (!showStops || isStopActive) return
-							GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
-						}}
+						onViewStateChange={changeViewState}
 						ref={deckRef}
 						style={{ display: "static" }}
 						initialViewState={initialViewState}
@@ -259,6 +246,7 @@ export default function Home() {
 						© OpenStreetMap
 					</a>
 				</div>
-			</main></body>
+			</main>
+		</body>
 	)
 }

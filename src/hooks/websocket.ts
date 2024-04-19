@@ -1,6 +1,6 @@
 import { Bus } from "@/components/type";
 import { logError, logInfo } from "@/utils/logger";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 
 const WebSocketHook = () => {
@@ -12,7 +12,7 @@ const WebSocketHook = () => {
 	const [initialized, setInitialized] = useState(false)
 
 
-    const connectWebSocket = async () => {
+    const connectWebSocket = useCallback( async () => {
 		if (!canConnect) return;
 		setCanConnect(false);
 
@@ -50,7 +50,7 @@ const WebSocketHook = () => {
 		};
 
 		setWebSocket(ws);
-	};
+	}, [canConnect]);
 
 
     useEffect(() => {
@@ -64,7 +64,7 @@ const WebSocketHook = () => {
 				webSocket.close();
 			}
 		};
-	}, []);
+	}, [connectWebSocket, initialized, webSocket]);
 
 
     return { buses };

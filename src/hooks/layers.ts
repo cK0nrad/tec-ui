@@ -1,7 +1,7 @@
 // @ts-ignore
 import { IconLayer, TileLayer, ScatterplotLayer, PathLayer, BitmapLayer } from "deck.gl";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Supercluster, { AnyProps, PointFeature } from "supercluster";
 import { getBusIcon, getStopIcon, getStops, safeGet } from '@/utils/utils';
 
@@ -16,17 +16,12 @@ import useFilterStore from "@/stores/filterStore";
 
 
 const LayersHook = (buses: Bus[]) => {
-    const supercluster = useMemo(() => new Supercluster({
-        maxZoom: 15,
-        radius: 40,
-    }), [])
+    // const supercluster = useMemo(() => new Supercluster({
+    //     maxZoom: 15,
+    //     radius: 40,
+    // }), [])
 
     const { theme } = useThemeStore()
-
-    const [activeBuses, setActiveBuses] = useState([] as any)
-    const activeStop = useCurrentStopStore()
-
-    const { filter } = useFilterStore()
 
     const {
         setUiData,
@@ -34,13 +29,14 @@ const LayersHook = (buses: Bus[]) => {
         currentLinePath, setCurrentLinePath,
         nextStop,
         showStops,
-        stopsList, viewport: viewport_cam
+        // stopsList, viewport: viewport_cam
     } = useDataStore()
 
     const { setBus, removeBus } = useCurrentBusStore()
     const viewport = useViewportStore();
 
-    const onClickBus = async (d: any) => {
+
+    const onClickBus = useCallback(async (d: any) => {
         setUiData({
             id: "",
             longName: "",
@@ -92,12 +88,13 @@ const LayersHook = (buses: Bus[]) => {
                     ...stop,
                 })
             }
-            setCurrentLineStops(new_stops)
 
             let path = [] as any[][2];
             for (let point of (json_data_shape as any[])) {
                 path.push([point.shape_pt_lon, point.shape_pt_lat])
             }
+
+            setCurrentLineStops(new_stops)
             setCurrentLinePath([{ path }])
 
             setBus(d.object)
@@ -110,57 +107,91 @@ const LayersHook = (buses: Bus[]) => {
             })
             logError(`Error while fetching bus info: ${e}`)
         }
-
-    }
-
+    }, [viewport, removeBus, setBus, setCurrentLinePath, setCurrentLineStops, setUiData])
 
 
-    return useMemo(() => [
+
+    const map_layer = useMemo(() => new TileLayer({
+        id: "map-layer",
+        data: [
+            `https://map.ckonrad.io/${theme}/{z}/{x}/{y}.png`,
+        ],
+        pickable: true,
+        minZoom: 0,
+        maxZoom: 20,
         // @ts-ignore
-        new TileLayer({
-            id: "map-layer",
-            data: [
-                `https://map.ckonrad.io/${theme}/{z}/{x}/{y}.png`,
-            ],
-            pickable: true,
-            minZoom: 0,
-            maxZoom: 20,
-            // @ts-ignore
-            tileSize: 512,
-            zoomOffset: 0,
-            extent: [-0.791, 48.093, 11.404, 53.410],
-            renderSubLayers: (props: any) => {
-                const {
-                    bbox: { west, south, east, north }
-                } = props.tile;
-                return [
-                    // @ts-ignore
-                    new BitmapLayer(props, {
-                        data: null,
-                        image: props.data,
-                        bounds: [west, south, east, north]
-                    })
-                ];
-            }
-        }),
+        tileSize: 512,
+        zoomOffset: 0,
+        extent: [-0.791, 48.093, 11.404, 53.410],
+        renderSubLayers: (props: any) => {
+            const {
+                bbox: { west, south, east, north }
+            } = props.tile;
+            return [
+                // @ts-ignore
+                new BitmapLayer(props, {
+                    data: null,
+                    image: props.data,
+                    bounds: [west, south, east, north]
+                })
+            ];
+        }
+    }), [theme])
 
-        new IconLayer({
-            id: "bus-layer",
-            visible: !showStops,
-            data: buses.filter(e => e.line.startsWith(filter)),
-            getPosition: (d: any) => {
-                return [d.longitude, d.latitude, 10]
-            },
-            // @ts-ignore
-            getIcon: (d: any) => ({
-                url: getBusIcon(d.line),
-                width: 50,
-                height: 50,
-            }),
-            getSize: (_: any) => 50,
-            onClick: onClickBus,
-            pickable: true,
+    const bus_layer = useMemo(() => new IconLayer({
+        id: "bus-layer",
+        visible: !showStops,
+        data: buses,
+        getPosition: (d: any) => {
+            return [d.longitude, d.latitude, 10]
+        },
+        // @ts-ignore
+        getIcon: (d: any) => ({
+            url: getBusIcon(d.line),
+            width: 50,
+            height: 50,
         }),
+        getSize: (_: any) => 50,
+        onClick: onClickBus,
+        pickable: true,
+    }), [buses, showStops, onClickBus])
+
+    const bus_path_layer = useMemo(() => new PathLayer({
+        id: 'bus-path-layer',
+        data: currentLinePath,
+        pickable: false,
+        widthScale: 20,
+        widthMinPixels: 3,
+        getPath: (d: any) => d.path,
+        getColor: () => [237, 78, 187],
+        getWidth: () => 0.5
+    }), [currentLinePath])
+
+    const stop_layer = useMemo(() => new ScatterplotLayer({
+        id: 'stops-layer',
+        data: [...currentLineStops],
+        pickable: false,
+        opacity: 1,
+        stroked: true,
+        filled: true,
+        radiusScale: 10,
+        radiusMinPixels: 5,
+        radiusMaxPixels: 100,
+        lineWidthMinPixels: 3,
+        getLineWidth: () => 3,
+        getPosition: (d: any) => d.coord,
+        getRadius: () => 1,
+        getFillColor: (d: any) => d.stop.stop_id == nextStop ? [255, 16, 240] : [255, 255, 255],
+        getLineColor: () => [0, 0, 0]
+    }), [currentLineStops, nextStop])
+
+    return [
+        // @ts-ignore
+        map_layer,
+        bus_layer,
+        bus_path_layer,
+        stop_layer,
+
 
         // new IconLayer({
         //     id: "bus-stop-layer",
@@ -179,26 +210,6 @@ const LayersHook = (buses: Bus[]) => {
         //     onClick: onClickBus,
         //     pickable: true,
         // }),
-
-        new IconLayer({
-            id: "current-stop-layer",
-            visible: activeStop.isStopActive,
-            data: [activeStop],
-            getPosition: (d: any) => {
-                return [d.x, d.y, 10]
-            },
-            // @ts-ignore
-            getIcon: (d: any) => ({
-                url: getStopIcon(d),
-                width: 50,
-                height: 62.5,
-                anchorX: 25,
-                anchorY: 62.5,
-            }),
-            getSize: (_: any) => 60,
-            pickable: true,
-        }),
-
         // new IconLayer({
         //     id: "interactive-stop-layer",
         //     visible: showStops && viewport.zoom >= MAX_ZOOM && !activeStop.isStopActive,
@@ -271,36 +282,26 @@ const LayersHook = (buses: Bus[]) => {
         //     },
         //     pickable: true,
         // }),
-        new PathLayer({
-            id: 'bus-path-layer',
-            data: currentLinePath,
-            pickable: false,
-            widthScale: 20,
-            widthMinPixels: 3,
-            getPath: (d: any) => d.path,
-            // getColor: () => ,
-            getColor: () => [237, 78, 187],
-            getWidth: () => 0.5
-        }),
+        // new IconLayer({
+        //     id: "current-stop-layer",
+        //     visible: activeStop.isStopActive,
+        //     data: [activeStop],
+        //     getPosition: (d: any) => {
+        //         return [d.x, d.y, 10]
+        //     },
+        //     // @ts-ignore
+        //     getIcon: (d: any) => ({
+        //         url: getStopIcon(d),
+        //         width: 50,
+        //         height: 62.5,
+        //         anchorX: 25,
+        //         anchorY: 62.5,
+        //     }),
+        //     getSize: (_: any) => 60,
+        //     pickable: true,
+        // }),
 
-        new ScatterplotLayer({
-            id: 'stops-layer',
-            data: currentLineStops,
-            pickable: false,
-            opacity: 1,
-            stroked: true,
-            filled: true,
-            radiusScale: 10,
-            radiusMinPixels: 5,
-            radiusMaxPixels: 100,
-            lineWidthMinPixels: 3,
-            getLineWidth: () => 3,
-            getPosition: (d: any) => d.coord,
-            getRadius: () => 1,
-            getFillColor: (d: any) => d.stop.stop_id == nextStop ? [255, 16, 240] : [255, 255, 255],
-            getLineColor: () => [0, 0, 0]
-        })
-    ], [currentLineStops, buses, currentLinePath, showStops])
+    ]
 
 }
 
