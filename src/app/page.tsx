@@ -5,7 +5,7 @@ import DeckGL from '@deck.gl/react';
 import { WebMercatorViewport } from 'deck.gl';
 
 import styles from './page.module.css'
-import React, { ChangeEvent, ChangeEventHandler, useEffect, useRef, useState } from "react"
+import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
 
 import InfoBar from '@/components/info-bar/info-bar';
 import { getStops } from '@/utils/utils';
@@ -118,7 +118,8 @@ export default function Home() {
 		}
 	}, [refresh, uiData])
 
-	const layers = LayersHook(buses.filter((bus: Bus) => bus.line.includes(filter)));
+	const filteredBus = useMemo(() => buses.filter((bus: Bus) => bus.line.includes(filter)), [buses, filter]);
+	const layers = LayersHook(filteredBus);
 
 	const reset_focus = () => {
 		removeStop();
@@ -134,7 +135,6 @@ export default function Home() {
 	const deckRef = useRef<DeckGL>(null);
 	return (
 		<body className={inter.className} style={{ backgroundColor: theme.bgColor }}>
-
 			<main className={styles.main}>
 				<div className={styles.topHolder}>
 					<div className={styles.popupHolder}>
