@@ -77,7 +77,8 @@ export default function Home() {
 				...viewport_r,
 				latitude: position.coords.latitude,
 				longitude: position.coords.longitude,
-				zoom: 15
+				date: new Date().getTime(),
+				zoom: 10
 			})
 		})
 	}

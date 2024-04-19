@@ -6,7 +6,8 @@ import { FlyToInterpolator } from 'deck.gl';
 
 
 type CurrentBusStore = ViewState & {
-    setViewstate: (bus: ViewState) => void,
+    setViewstate: (bus: ViewState & {date: number}) => void,
+    date: number, //force update
 }
 
 const DEFAULT_VALUE = {
@@ -15,6 +16,7 @@ const DEFAULT_VALUE = {
     zoom: 8,
     bearing: 0,
     pitch: 0,
+    date: new Date().getTime(),
     transitionDuration: 1000,
     transitionInterpolator: new FlyToInterpolator()
 }
