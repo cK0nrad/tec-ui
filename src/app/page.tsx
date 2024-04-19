@@ -218,16 +218,14 @@ export default function Home() {
 					<DeckGL
 						onViewStateChange={(e: any) => {
 							if (e.interactionState.isDragging) return;
-							(async () => {
-								const viewport = new WebMercatorViewport(e.viewState);
-								const nw = viewport.unproject([0, 0]);
-								// @ts-ignore
-								const se = viewport.unproject([viewport.width, viewport.height]);
-								setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
+							const viewport = new WebMercatorViewport(e.viewState);
+							const nw = viewport.unproject([0, 0]);
+							// @ts-ignore
+							const se = viewport.unproject([viewport.width, viewport.height]);
+							setViewport({ north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom })
 
-								if (!showStops || isStopActive) return
-								GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
-							})();
+							if (!showStops || isStopActive) return
+							GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
 						}}
 						ref={deckRef}
 						style={{ display: "static" }}
@@ -243,8 +241,6 @@ export default function Home() {
 				{
 					isBusActive ? <InfoBar /> : null
 				}
-
-
 				<div style={{
 					position: "absolute",
 					bottom: "0",
