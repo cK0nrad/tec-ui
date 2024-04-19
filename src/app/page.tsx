@@ -78,7 +78,7 @@ export default function Home() {
 				latitude: position.coords.latitude,
 				longitude: position.coords.longitude,
 				date: new Date().getTime(),
-				zoom: 10
+				zoom: 14
 			})
 		})
 	}
