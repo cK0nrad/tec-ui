@@ -45,12 +45,12 @@
 
 @media (max-width:1200px) {
     .bus_container {
-        position: static !important;
         width: 100% !important;
         bottom: 0 !important;
         transform: none !important;
         top: auto;
         top: left;
+        left: 0 !important;
         border-radius: 0 !important;
         min-height: 30vh !important;
         max-height: 30vh !important;

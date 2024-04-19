@@ -3,8 +3,9 @@ import { create } from 'zustand'
 
 type ThemeStore = {
     theme: 'light' | 'dark'
-    setDark: () => void;
-    setLight: () => void;
+    switch(): void
+    // setDark: () => void;
+    // setLight: () => void;
     bgColor: string,
     textColor: string
 }
@@ -19,8 +20,13 @@ const useThemeStore = create<ThemeStore>((set) => {
         theme: currentTheme ? "dark" : "light",
         bgColor: currentTheme ? "#110F0D" : "#eef0f2",
         textColor: currentTheme ? "#fff" : "#000",
-        setDark: () => set({ theme: 'dark', bgColor: "#110F0D", textColor: "#fff" }),
-        setLight: () => set({ theme: 'light', bgColor: "#eef0f2", textColor: "#000" })
+        switch: () => set((state) => ({
+            theme: state.theme === "light" ? "dark" : "light",
+            bgColor: state.theme === "light" ? "#110F0D" : "#eef0f2",
+            textColor: state.theme === "light" ? "#fff" : "#000"
+        }))
+        // setDark: () => set({ theme: 'dark', bgColor: "#110F0D", textColor: "#fff" }),
+        // setLight: () => set({ theme: 'light', bgColor: "#eef0f2", textColor: "#000" })
     })
 })
 

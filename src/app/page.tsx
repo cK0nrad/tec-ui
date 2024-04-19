@@ -175,16 +175,9 @@ export default function Home() {
 							Search a line
 							<input type="text" value={filter} onChange={searchBus} />
 							<div style={{ width: "100%", paddingTop: 5, display: "flex", flexDirection: "row" }}>
-								{
-									theme.theme == "light" ?
-										<div onClick={() => theme.setDark()} style={{ flex: 1 }}>
-											<Image src={moon} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
-										</div> :
-										<div onClick={() => theme.setLight()} style={{ flex: 1 }}>
-											<Image src={sun} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
-										</div>
-								}
-
+								<div onClick={() => theme.switch()} style={{ flex: 1 }}>
+									<Image src={theme.theme == "light" ? moon : sun} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
+								</div>
 								<div onClick={getLocation} style={{ flex: 1 }}>
 									<Image src={theme.theme == "light" ? locate : locateDark} width={20} height={20} alt="" style={{ fill: theme.textColor }} />
 								</div>
