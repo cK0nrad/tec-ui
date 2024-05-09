@@ -51,3 +51,13 @@
     box-shadow: none !important;
   }
 }
+
+
+.button {
+  color: white;
+  border: none;
+  padding: 5px 10px ;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}

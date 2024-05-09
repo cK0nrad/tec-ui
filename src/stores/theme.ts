@@ -10,16 +10,19 @@ type ThemeList = 'dark' | 'light'
 
 type Theme = {
     bgColor: string,
+    invertBgColor: string,
     textColor: string
 }
 
 const darkTheme: Theme = {
     bgColor: "#110F0D",
+    invertBgColor: "#eef0f2",
     textColor: "#fff"
 }
 
 const lightTheme: Theme = {
     bgColor: "#eef0f2",
+    invertBgColor: "#110F0D",
     textColor: "#000"
 }
 

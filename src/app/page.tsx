@@ -24,33 +24,28 @@ import locate from "../../public/location.svg"
 import locateDark from "../../public/locationDark.svg"
 
 import useThemeStore, { getTheme } from '@/stores/theme';
-import { Inter } from 'next/font/google';
 import useViewportStore from '@/stores/currentViewport';
 import { Bus, MAX_ZOOM } from '@/components/type';
 import useFilterStore from '@/stores/filterStore';
-const inter = Inter({ subsets: ['latin'] })
+
 
 
 export default function Home() {
+	
+	const deckRef = useRef<DeckGL>(null);
+
 	const initialViewState = useCurrentViewportStore();
-
 	const { buses } = WebSocketHook();
-
 	const [popup, removePopup] = useState(false)
-
 	const { theme, switchTheme } = useThemeStore()
-
-	
-	
 	const colorScheme = useMemo(() => getTheme(theme), [theme])
+	const { filter, setFilter } = useFilterStore()
+	const { setBus, isBusActive } = useCurrentBusStore()
+	const { removeStop, isStopActive } = useCurrentStopStore()
+	const viewport_r = useViewportStore();
 
-	useEffect(() => {
-		const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-		if (metaThemeColor) {
-			metaThemeColor.setAttribute('content', colorScheme.bgColor);
-		}
-	}, [colorScheme.bgColor]);
-
+	const filteredBus = useMemo(() => buses.filter((bus: Bus) => bus.line.includes(filter)), [buses, filter]);
+	const layers = LayersHook(filteredBus);
 
 	const {
 		uiData, currentLineStops, currentLinePath,
@@ -62,14 +57,6 @@ export default function Home() {
 		setTheoricalPercentage,
 		setRealPercentage,
 	} = useDataStore()
-
-
-	const { filter, setFilter } = useFilterStore()
-
-
-	const { setBus, isBusActive } = useCurrentBusStore()
-	const { removeStop, isStopActive } = useCurrentStopStore()
-	const viewport_r = useViewportStore();
 
 	const getLocation = () => {
 		navigator.geolocation.getCurrentPosition((position) => {
@@ -83,11 +70,37 @@ export default function Home() {
 		})
 	}
 
-
 	const searchBus = (e: ChangeEvent<HTMLInputElement>) => {
 		setFilter(e.target.value)
 	}
+	const reset_focus = () => {
+		removeStop();
+		setActiveBuses([]);
+	}
 
+	const changeViewState = useCallback((e: any) => {
+		if (e.interactionState.isDragging) return;
+		const viewport = new WebMercatorViewport(e.viewState);
+		const nw = viewport.unproject([0, 0]);
+		// @ts-ignore
+		const se = viewport.unproject([viewport.width, viewport.height]);
+		const newViewport = { north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom };
+		// if (!showStops || isStopActive) return
+		// GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
+	}, [])
+
+	const GetViewportStops = async (north: number, south: number, east: number, west: number, zoom: number) => {
+		if (zoom < MAX_ZOOM) return
+		const stop = await getStops(north, south, east, west);
+		setStopsList(stop)
+	}
+
+	useEffect(() => {
+		const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+		if (metaThemeColor) {
+			metaThemeColor.setAttribute('content', colorScheme.bgColor);
+		}
+	}, [colorScheme.bgColor]);
 
 	useEffect(() => {
 		setTheoricalPercentage(currentLineStops.length != 0 ? currentTheoricalStop / (currentLineStops.length - 1) * 100 : 0)
@@ -117,37 +130,11 @@ export default function Home() {
 		}
 	}, [buses, uiData, currentLinePath, currentLineStops, setCurrentTheoricalStop, setCurrentStop, setNextStop])
 
-	const filteredBus = useMemo(() => buses.filter((bus: Bus) => bus.line.includes(filter)), [buses, filter]);
-	const layers = LayersHook(filteredBus);
-
-	const reset_focus = () => {
-		removeStop();
-		setActiveBuses([]);
-	}
-
-	const changeViewState = useCallback((e: any) => {
-		if (e.interactionState.isDragging) return;
-		const viewport = new WebMercatorViewport(e.viewState);
-		const nw = viewport.unproject([0, 0]);
-		// @ts-ignore
-		const se = viewport.unproject([viewport.width, viewport.height]);
-		const newViewport = { north: nw[1], east: se[0], south: se[1], west: nw[0], zoom: e.viewState.zoom };
-		// if (!showStops || isStopActive) return
-		// GetViewportStops(nw[1], se[1], se[0], nw[0], e.viewState.zoom)
-	}, [])
-
-	const GetViewportStops = async (north: number, south: number, east: number, west: number, zoom: number) => {
-		if (zoom < MAX_ZOOM) return
-		const stop = await getStops(north, south, east, west);
-		setStopsList(stop)
-	}
-
-	const deckRef = useRef<DeckGL>(null);
 	return (
-		<body className={inter.className} style={{ backgroundColor: colorScheme.bgColor }}>
+		<body style={{ backgroundColor: colorScheme.bgColor }}>
 			<main className={styles.main}>
 				<div className={styles.topHolder}>
-					<div className={styles.popupHolder}>
+				<div className={styles.popupHolder}>
 						<div style={{
 							position: "fixed",
 							right: "50%",
@@ -162,12 +149,29 @@ export default function Home() {
 							borderRadius: 10,
 							textAlign: "center",
 							color: colorScheme.textColor,
-							flex: 1
+							flex: 1,
+							gap: 5
 						}} className={styles.popup}>
-							Click on a bus to see details!
-							<button onClick={() => { removePopup(true) }}>close</button>
+							Click on a bus to see details! <br />
+							If you have any suggestion, you can click on the Suggestion button to send one!
+							<button 
+								onClick={() => document.location.href = "/feedback" }
+								className={` ${styles.button}`}
+								style={{backgroundColor: colorScheme.invertBgColor, color: colorScheme.bgColor}}
+							>
+								Send suggestions | Answer mini survey
+							</button>
+
+							<button 
+								onClick={() => { removePopup(true) }}
+								className={` ${styles.button}`}
+								style={{backgroundColor: colorScheme.invertBgColor, color: colorScheme.bgColor}}
+							>
+								close
+							</button>
 						</div>
 					</div>
+
 					<div className={styles.menuHolder}>
 						<div style={{
 							position: "fixed",
@@ -206,12 +210,13 @@ export default function Home() {
 							flexDirection: "column",
 							backgroundColor: colorScheme.bgColor,
 							borderRadius: 15,
+							gap: 5,
 							boxShadow: "0px 0px 10px 0px #000000",
 							flex: 1,
 						}} className={styles.selection}>
-							<button onClick={() => { reset_focus(); setShowStops(false) }}>Live buses</button>
-							<button onClick={() => { reset_focus(); GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); setShowStops(true) }} disabled>Stops</button>
-							<button onClick={() => { GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); reset_focus() }} style={{ display: isStopActive ? "inline" : "none" }}>Remove focus</button>
+							<button onClick={() => { reset_focus(); setShowStops(false) }} className={`${styles.button}`} style={{backgroundColor: colorScheme.invertBgColor, color: colorScheme.bgColor}}>Live buses</button>
+							<button onClick={() => { reset_focus(); GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); setShowStops(true) }} disabled className={` ${styles.button}`}  style={{backgroundColor: colorScheme.invertBgColor  + '70', color: colorScheme.bgColor, cursor:'not-allowed'}}>Stops</button>
+							<button onClick={() => { GetViewportStops(viewport.north, viewport.south, viewport.east, viewport.west, viewport.zoom); reset_focus() }} style={{ display: isStopActive ? "inline" : "none", backgroundColor: colorScheme.invertBgColor, color: colorScheme.bgColor }} className={` ${styles.button}`} >Remove focus</button>
 						</div>
 					</div>
 				</div>
