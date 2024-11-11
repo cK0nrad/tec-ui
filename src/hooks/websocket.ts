@@ -34,6 +34,7 @@ const WebSocketHook = () => {
 				let decompressedStream = message.data.stream().pipeThrough(ds);
 				new Response(decompressedStream).text().then(e => {
 					const data = JSON.parse(atob(e)) as Bus[]
+					console.log(data)
 					setBuses(data)
 				})
 			} catch (e) {
